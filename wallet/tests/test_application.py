@@ -5,7 +5,7 @@ import pytest
 from wallet.application.use_cases import CreditWalletUseCase, GetWalletUseCase
 from wallet.domain.entities import Wallet
 from wallet.domain.exceptions import InvalidAmountError
-
+from wallet.application.use_cases import TransferWalletUseCase
 
 class InMemoryWalletRepository:
     """Repository factice en mémoire pour les tests unitaires applicatifs."""
@@ -65,3 +65,22 @@ def test_credit_wallet_use_case_raises_on_invalid_amount():
 
     with pytest.raises(InvalidAmountError):
         use_case.execute(uuid4(), Decimal("-10.00"))
+
+def test_transfer_wallet_use_case_success():
+    repository = InMemoryWalletRepository()
+    sender_id = uuid4()
+    recipient_id = uuid4()
+
+    repository.save(Wallet(user_id=sender_id, balance=Decimal("200.00")))
+    repository.save(Wallet(user_id=recipient_id, balance=Decimal("50.00")))
+
+    use_case = TransferWalletUseCase(repository)
+    sender_wallet, recipient_wallet = use_case.execute(
+        sender_id=sender_id,
+        recipient_id=recipient_id,
+        amount=Decimal("75.00"),
+    )
+
+    assert sender_wallet.balance == Decimal("125.00")
+    assert recipient_wallet.balance == Decimal("125.00")
+    assert repository.get_by_user_id(sender_id).balance == Decimal("125.00")
