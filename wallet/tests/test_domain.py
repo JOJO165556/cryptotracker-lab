@@ -44,3 +44,20 @@ def test_credit_raises_on_invalid_amount():
     wallet = Wallet(user_id=uuid4(), balance=Decimal("100.00"))
     with pytest.raises(InvalidAmountError):
         wallet.credit(Decimal("0.00"))
+        
+def test_transfer_success():
+    source = Wallet(user_id=uuid4(), balance=Decimal("100.00"))
+    target = Wallet(user_id=uuid4(), balance=Decimal("20.00"))
+
+    source.transfer(target, Decimal("40.00"))
+
+    assert source.balance == Decimal("60.00")
+    assert target.balance == Decimal("60.00")
+
+
+def test_transfer_insufficient_balance():
+    source = Wallet(user_id=uuid4(), balance=Decimal("10.00"))
+    target = Wallet(user_id=uuid4(), balance=Decimal("20.00"))
+
+    with pytest.raises(InsufficientBalanceError):
+        source.transfer(target, Decimal("50.00"))

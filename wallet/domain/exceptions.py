@@ -6,3 +6,7 @@ class InsufficientBalanceError(Exception):
 class InvalidAmountError(Exception):
     """Levée lorsqu'un montant ou une quantité est négative ou invalide."""
     pass
+
+class WalletNotFoundError(Exception):
+    """Levée lorsqu'un portefeuille n'existe pas en base de données."""
+    pass
