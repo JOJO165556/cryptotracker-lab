@@ -26,3 +26,30 @@ class WalletModel(models.Model):
         db_table = "wallets"
         verbose_name = "Wallet"
         verbose_name_plural = "Wallets"
+
+
+class TransactionModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sender_wallet = models.ForeignKey(
+        WalletModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="sent_transactions",
+    )
+    recipient_wallet = models.ForeignKey(
+        WalletModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="received_transactions",
+    )
+    amount = models.DecimalField(max_digits=18, decimal_places=8)
+    type = models.CharField(max_length=20)  # ex: DEPOSIT, WITHDRAWAL, TRANSFER
+    status = models.CharField(max_length=20, default="COMPLETED")
+    idempotency_key = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    failure_reason = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "wallet_transactions"
