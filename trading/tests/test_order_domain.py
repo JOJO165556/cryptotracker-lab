@@ -1,6 +1,5 @@
 from decimal import Decimal
 from uuid import uuid4
-
 import pytest
 
 from trading.domain.entities import Order, Trade
@@ -43,11 +42,13 @@ def test_partial_and_total_execution():
         quantity=Decimal("2.0"),
     )
 
+    # Exécution partielle
     trade1 = order.execute(execution_price=Decimal("50000"), quantity=Decimal("0.5"))
     assert order.status == OrderStatus.PARTIALLY_FILLED
     assert order.remaining_quantity == Decimal("1.5")
     assert trade1.quantity == Decimal("0.5")
 
+    # Exécution finale
     trade2 = order.execute(execution_price=Decimal("51000"), quantity=Decimal("1.5"))
     assert order.status == OrderStatus.FILLED
     assert order.remaining_quantity == Decimal("0.0")

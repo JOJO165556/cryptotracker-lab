@@ -1,5 +1,4 @@
 from uuid import UUID
-
 from django.db import transaction
 
 from trading.domain.entities import Order, Trade
@@ -11,6 +10,7 @@ class OrderRepository:
     """Repository gérant la persistance des ordres de trading."""
 
     def save(self, order: Order) -> Order:
+        """Persiste ou met à jour un ordre en BD."""
         model, _ = OrderModel.objects.update_or_create(
             id=order.id,
             defaults={
@@ -45,7 +45,9 @@ class OrderRepository:
 
     @transaction.atomic
     def save_order_with_trade(self, order: Order, trade: Trade) -> tuple[Order, Trade]:
+        """Sauvegarde atomique de l'ordre mis à jour et du trade exécuté."""
         saved_order = self.save(order)
+        
         trade_model = TradeModel.objects.create(
             id=trade.id,
             order_id=order.id,

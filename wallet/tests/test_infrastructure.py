@@ -2,9 +2,9 @@ from decimal import Decimal
 from uuid import uuid4
 import pytest
 from django.contrib.auth import get_user_model
-from wallet.domain.entities import Wallet as DomainWallet
-from wallet.infrastructure.repositories import WalletRepository
-from wallet.models import WalletModel
+from wallet.domain.entities import Transaction, TransactionType, Wallet as DomainWallet
+from wallet.infrastructure.repositories import TransactionRepository, WalletRepository
+from wallet.models import TransactionModel, WalletModel
 
 User = get_user_model()
 
@@ -69,3 +69,31 @@ def test_wallet_repository_get_non_existent():
     repository = WalletRepository()
     retrieved_wallet = repository.get_by_user_id(uuid4())
     assert retrieved_wallet is None
+
+
+@pytest.mark.django_db
+def test_transaction_repository_persists_participants_and_idempotency_key():
+    sender_user = User.objects.create_user(username="sender", email="sender@example.com")
+    recipient_user = User.objects.create_user(
+        username="recipient",
+        email="recipient@example.com",
+    )
+    wallet_repository = WalletRepository()
+    sender = wallet_repository.save(DomainWallet(user_id=sender_user.id, balance=Decimal("100.00")))
+    recipient = wallet_repository.save(DomainWallet(user_id=recipient_user.id, balance=Decimal("20.00")))
+    transaction_repository = TransactionRepository()
+
+    transaction = transaction_repository.save(
+        Transaction(
+            sender_id=sender.id,
+            recipient_id=recipient.id,
+            amount=Decimal("30.00"),
+            type=TransactionType.TRANSFER,
+            idempotency_key="transfer-1",
+        )
+    )
+
+    model = TransactionModel.objects.get(id=transaction.id)
+    assert model.sender_wallet_id == sender.id
+    assert model.recipient_wallet_id == recipient.id
+    assert transaction_repository.get_by_idempotency_key("transfer-1").id == transaction.id
