@@ -1,11 +1,23 @@
-annotated-types==0.8.0
-asgiref==3.12.1
+# Web Framework & API
 Django==6.1.1
-django-environ==0.14.0
 django-ninja==1.7.0
+djangorestframework-simplejwt==5.5.1
+django-environ==0.14.0
+
+# Temps réel & Asynchrone (WebSockets)
+channels==4.2.0
+channels-redis==4.2.1
+daphne==4.1.2
+
+# Base de données & Cache
 psycopg2-binary==2.9.13
+redis==8.1.0
+
+# Validation & Modèles DTO
 pydantic==2.13.5
-pydantic_core==2.46.5
-sqlparse==0.6.0
-typing-inspection==0.4.4
-typing_extensions==4.16.0
+email-validator==2.3.0
+
+# Tests
+pytest==8.4.2
+pytest-asyncio==0.24.0
+pytest-django==4.14.0
