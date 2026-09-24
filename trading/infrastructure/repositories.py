@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from django.db import transaction
 
 from trading.domain.entities import Order, Trade
@@ -7,10 +8,10 @@ from trading.models import OrderModel, TradeModel
 
 
 class OrderRepository:
-    """Repository gérant la persistance des ordres de trading."""
+    """Repository gérant la persistance des ordres de trading"""
 
     def save(self, order: Order) -> Order:
-        """Persiste ou met à jour un ordre en BD."""
+        """Persiste ou met à jour un ordre en base de données"""
         from wallet.models import WalletModel
 
         wallet = WalletModel.objects.get(id=order.wallet_id)
@@ -19,9 +20,21 @@ class OrderRepository:
             defaults={
                 "wallet": wallet,
                 "symbol": order.symbol,
-                "side": order.side.value if isinstance(order.side, OrderSide) else order.side,
-                "type": order.type.value if isinstance(order.type, OrderType) else order.type,
-                "status": order.status.value if isinstance(order.status, OrderStatus) else order.status,
+                "side": (
+                    order.side.value
+                    if isinstance(order.side, OrderSide)
+                    else order.side
+                ),
+                "type": (
+                    order.type.value
+                    if isinstance(order.type, OrderType)
+                    else order.type
+                ),
+                "status": (
+                    order.status.value
+                    if isinstance(order.status, OrderStatus)
+                    else order.status
+                ),
                 "quantity": order.quantity,
                 "filled_quantity": order.filled_quantity,
                 "price": order.price,
@@ -31,26 +44,28 @@ class OrderRepository:
         return self._to_domain(model)
 
     def get_by_id(self, order_id: UUID) -> Order | None:
+        """Retourne un ordre par son identifiant unique"""
         try:
-            model = OrderModel.objects.select_related('wallet').get(id=order_id)
+            model = OrderModel.objects.select_related("wallet").get(id=order_id)
             return self._to_domain(model)
         except OrderModel.DoesNotExist:
             return None
 
     def get_by_idempotency_key(self, key: str) -> Order | None:
+        """Retourne un ordre par sa clé d'idempotence, None si inexistante"""
         if not key:
             return None
         try:
-            model = OrderModel.objects.select_related('wallet').get(idempotency_key=key)
+            model = OrderModel.objects.select_related("wallet").get(idempotency_key=key)
             return self._to_domain(model)
         except OrderModel.DoesNotExist:
             return None
 
     @transaction.atomic
     def save_order_with_trade(self, order: Order, trade: Trade) -> tuple[Order, Trade]:
-        """Sauvegarde atomique de l'ordre mis à jour et du trade exécuté."""
+        """Sauvegarde atomique de l'ordre mis à jour et du trade exécuté"""
         saved_order = self.save(order)
-        
+
         trade_model = TradeModel.objects.create(
             id=trade.id,
             order_id=order.id,
@@ -66,23 +81,32 @@ class OrderRepository:
         )
         return saved_order, saved_trade
 
-    def list_paginated(self, page: int = 1, page_size: int = 10) -> tuple[list[Order], int]:
-        """Liste les ordres avec pagination."""
+    def list_paginated(
+        self, page: int = 1, page_size: int = 10, wallet_id: UUID | None = None
+    ) -> tuple[list[Order], int]:
+        """Liste les ordres avec pagination, filtrés optionnellement par wallet"""
         offset = (page - 1) * page_size
-        models = OrderModel.objects.select_related('wallet').all()[offset:offset + page_size]
-        total = OrderModel.objects.count()
-        orders = [self._to_domain(model) for model in models]
-        return orders, total
+        qs = OrderModel.objects.select_related("wallet").all()
+        if wallet_id is not None:
+            qs = qs.filter(wallet_id=wallet_id)
+        total = qs.count()
+        models = qs[offset : offset + page_size]
+        return [self._to_domain(m) for m in models], total
 
-    def list_trades_paginated(self, page: int = 1, page_size: int = 10) -> tuple[list[Trade], int]:
-        """Liste les trades avec pagination."""
+    def list_trades_paginated(
+        self, page: int = 1, page_size: int = 10, wallet_id: UUID | None = None
+    ) -> tuple[list[Trade], int]:
+        """Liste les trades avec pagination, filtrés optionnellement par wallet"""
         offset = (page - 1) * page_size
-        models = TradeModel.objects.select_related('order').all()[offset:offset + page_size]
-        total = TradeModel.objects.count()
-        trades = [self._to_trade_domain(model) for model in models]
-        return trades, total
+        qs = TradeModel.objects.select_related("order__wallet").all()
+        if wallet_id is not None:
+            qs = qs.filter(order__wallet_id=wallet_id)
+        total = qs.count()
+        models = qs[offset : offset + page_size]
+        return [self._to_trade_domain(m) for m in models], total
 
     def _to_domain(self, model: OrderModel) -> Order:
+        """Convertit le modèle ORM en entité domaine Order"""
         return Order(
             id=model.id,
             wallet_id=model.wallet.id,
@@ -98,6 +122,7 @@ class OrderRepository:
         )
 
     def _to_trade_domain(self, model: TradeModel) -> Trade:
+        """Convertit le modèle ORM en entité domaine Trade"""
         return Trade(
             id=model.id,
             order_id=model.order.id,

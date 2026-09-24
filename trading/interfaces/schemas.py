@@ -7,9 +7,13 @@ from trading.domain.value_objects import OrderSide, OrderStatus, OrderType
 
 
 class CreateOrderSchema(Schema):
-    """Données requises pour la création d'un ordre de trading."""
+    """
+    Données requises pour la création d'un ordre de trading
 
-    wallet_id: UUID
+    Le wallet_id n'est pas exposé ici, il est résolu automatiquement
+    depuis le token JWT dans l'interface API
+    """
+
     symbol: str
     side: OrderSide
     type: OrderType
@@ -18,14 +22,14 @@ class CreateOrderSchema(Schema):
 
 
 class ExecuteTradeSchema(Schema):
-    """Données requises pour l'exécution partielle ou totale d'un ordre."""
+    """Données requises pour l'exécution partielle ou totale d'un ordre"""
 
     execution_price: Decimal
     quantity: Decimal
 
 
 class OrderResponseSchema(Schema):
-    """Structure de réponse représentant un ordre de trading."""
+    """Structure de réponse représentant un ordre de trading"""
 
     id: UUID
     wallet_id: UUID
@@ -40,23 +44,23 @@ class OrderResponseSchema(Schema):
 
 
 class TradeResponseSchema(Schema):
-    """Structure de réponse représentant une exécution de transaction."""
+    """Structure de réponse représentant une exécution de trade"""
 
     id: UUID
     order_id: UUID
     price: Decimal
     quantity: Decimal
-    
+
 
 class PaginatedOrdersResponseSchema(Schema):
-    """Réponse paginée pour l'historique des ordres."""
+    """Réponse paginée pour l'historique des ordres"""
 
     count: int
     results: List[OrderResponseSchema]
 
 
 class PaginatedTradesResponseSchema(Schema):
-    """Réponse paginée pour l'historique des transactions."""
+    """Réponse paginée pour l'historique des trades exécutés"""
 
     count: int
     results: List[TradeResponseSchema]

@@ -1,8 +1,10 @@
 from typing import Optional
 from uuid import UUID
+
 from ninja import Header, Router
 from ninja.errors import HttpError
 
+from identity.infrastructure.auth import auth_jwt
 from trading.application.use_cases import (
     CreateOrderUseCase,
     ExecuteTradeUseCase,
@@ -18,8 +20,19 @@ from trading.interfaces.schemas import (
     PaginatedTradesResponseSchema,
     TradeResponseSchema,
 )
+from wallet.domain.exceptions import InsufficientBalanceError, WalletNotFoundError
+from wallet.infrastructure.repositories import WalletRepository
 
-router = Router(tags=["Trading"])
+router = Router(tags=["Trading"], auth=auth_jwt)
+
+
+def _get_wallet_id(request) -> UUID:
+    """Résout le wallet_id de l'utilisateur connecté depuis son JWT."""
+    wallet_repo = WalletRepository()
+    wallet = wallet_repo.get_by_user_id(request.user.id)
+    if wallet is None:
+        raise HttpError(404, "Portefeuille introuvable. Effectuez d'abord un dépôt.")
+    return wallet.id
 
 
 @router.post("/orders/", response={201: OrderResponseSchema, 200: OrderResponseSchema})
@@ -28,15 +41,18 @@ def create_order(
     payload: CreateOrderSchema,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
-    """Créer un ordre de trading ou restituer un ordre existant si la clé d'idempotence correspond.
-
-    Toutes les violations de règles du domaine (ex: prix manquant pour un ordre LIMIT)
-    sont capturées et renvoyées sous forme d'erreur HTTP 400.
     """
+    Créer un ordre de trading pour l'utilisateur connecté.
+
+    Le wallet_id est déduit automatiquement du token JWT, il n'est plus
+    fourni dans le body (évite qu'un utilisateur passe un wallet qui n'est pas le sien).
+    Renvoie l'ordre existant sans erreur si la clé d'idempotence correspond (HTTP 200).
+    """
+    wallet_id = _get_wallet_id(request)
     use_case = CreateOrderUseCase()
     try:
-        return use_case.execute(
-            wallet_id=payload.wallet_id,
+        order = use_case.execute(
+            wallet_id=wallet_id,
             symbol=payload.symbol,
             side=payload.side,
             type=payload.type,
@@ -47,10 +63,21 @@ def create_order(
     except TradingDomainException as e:
         raise HttpError(400, str(e))
 
+    # Idempotency replay → 200, nouvelle création → 201
+    status = (
+        200 if idempotency_key and order.idempotency_key == idempotency_key else 201
+    )
+    return status, order
+
 
 @router.post("/orders/{order_id}/execute/", response=TradeResponseSchema)
 def execute_trade(request, order_id: UUID, payload: ExecuteTradeSchema):
-    """Exécuter un ordre partiellement ou totalement."""
+    """
+    Exécute un ordre (partiellement ou totalement).
+
+    Débite le wallet de l'acheteur ou crédite celui du vendeur,
+    et met à jour la position WalletAsset en conséquence.
+    """
     use_case = ExecuteTradeUseCase()
     try:
         _, trade = use_case.execute(
@@ -61,19 +88,30 @@ def execute_trade(request, order_id: UUID, payload: ExecuteTradeSchema):
         return trade
     except TradingDomainException as e:
         raise HttpError(400, str(e))
+    except InsufficientBalanceError as e:
+        raise HttpError(422, str(e))
+    except WalletNotFoundError as e:
+        raise HttpError(404, str(e))
     except ValueError as e:
         raise HttpError(404, str(e))
-    
+
 
 @router.get("/orders/", response=PaginatedOrdersResponseSchema)
 def list_orders(request, page: int = 1, page_size: int = 10):
-    """Consulter l'historique des ordres avec pagination."""
+    """
+    Consulter l'historique des ordres de l'utilisateur connecté avec pagination.
+    Seuls les ordres du wallet de l'utilisateur sont retournés.
+    """
+    wallet_id = _get_wallet_id(request)
     use_case = ListOrdersUseCase()
-    return use_case.execute(page=page, page_size=page_size)
+    return use_case.execute(wallet_id=wallet_id, page=page, page_size=page_size)
 
 
 @router.get("/transactions/", response=PaginatedTradesResponseSchema)
 def list_transactions(request, page: int = 1, page_size: int = 10):
-    """Consulter l'historique des transactions exécutées avec pagination."""
+    """
+    Consulter l'historique des transactions exécutées de l'utilisateur connecté.
+    """
+    wallet_id = _get_wallet_id(request)
     use_case = ListTransactionsUseCase()
-    return use_case.execute(page=page, page_size=page_size)
+    return use_case.execute(wallet_id=wallet_id, page=page, page_size=page_size)

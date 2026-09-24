@@ -3,6 +3,34 @@ from decimal import Decimal
 from django.db import models
 
 
+class PriceModel(models.Model):
+    """Historique des prix de marché pour un actif
+
+    Indexé sur (asset_symbol, recorded_at) pour les requêtes temporelles fréquentes.
+    On utilise asset_symbol plutôt qu'une FK vers AssetModel pour
+    découpler l'historique des prix du cycle de vie des actifs.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    asset_symbol = models.CharField(max_length=20, db_index=True)
+    value = models.DecimalField(max_digits=18, decimal_places=8)
+    recorded_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        db_table = "market_prices"
+        ordering = ["-recorded_at"]
+        indexes = [
+            models.Index(
+                fields=["asset_symbol", "-recorded_at"], name="idx_price_symbol_time"
+            ),
+        ]
+        verbose_name = "Price"
+        verbose_name_plural = "Prices"
+
+    def __str__(self):
+        return f"{self.asset_symbol} = {self.value} @ {self.recorded_at}"
+
+
 class AssetModel(models.Model):
     """Modèle ORM Django pour la persistance des actifs.
 

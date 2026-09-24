@@ -5,7 +5,7 @@ from ninja import Schema
 
 
 class AssetResponseSchema(Schema):
-    """Structure de réponse représentant un actif."""
+    """Structure de réponse représentant un actif"""
 
     id: UUID
     symbol: str
@@ -16,6 +16,20 @@ class AssetResponseSchema(Schema):
 
 
 class AssetListResponseSchema(Schema):
-    """Réponse listant tous les actifs."""
+    """Réponse listant tous les actifs"""
 
     assets: List[AssetResponseSchema]
+
+
+class PriceUpdateSchema(Schema):
+    """Données requises pour mettre à jour le prix d'un actif"""
+
+    price: str  # string pour éviter la perte de précision décimale
+
+
+class PriceUpdateResponseSchema(Schema):
+    """Réponse après une mise à jour de prix réussie"""
+
+    symbol: str
+    price: str
+    ts: int
