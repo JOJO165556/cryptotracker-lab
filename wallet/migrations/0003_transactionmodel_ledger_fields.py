@@ -15,7 +15,9 @@ def migrate_wallet_reference(apps, schema_editor):
 def reverse_wallet_reference(apps, schema_editor):
     transaction_model = apps.get_model("wallet", "TransactionModel")
     for transaction in transaction_model.objects.all():
-        transaction.wallet_id = transaction.recipient_wallet_id or transaction.sender_wallet_id
+        transaction.wallet_id = (
+            transaction.recipient_wallet_id or transaction.sender_wallet_id
+        )
         transaction.save(update_fields=("wallet",))
 
 

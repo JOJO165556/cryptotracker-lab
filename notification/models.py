@@ -53,7 +53,9 @@ class NotificationModel(models.Model):
     )
     type = models.CharField(max_length=20, db_index=True)  # ALERT, TRANSACTION, SYSTEM
     payload = models.JSONField(default=dict)
-    status = models.CharField(max_length=10, default="UNREAD", db_index=True)  # UNREAD, READ
+    status = models.CharField(
+        max_length=10, default="UNREAD", db_index=True
+    )  # UNREAD, READ
     read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

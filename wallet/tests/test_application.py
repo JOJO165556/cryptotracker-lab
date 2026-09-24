@@ -25,6 +25,13 @@ class InMemoryWalletRepository:
         return wallet
 
 
+class InMemoryWalletAssetRepository:
+    """Repository de positions factice en mémoire pour les tests unitaires."""
+
+    def list_by_wallet_id(self, wallet_id: UUID) -> list:
+        return []
+
+
 class InMemoryTransactionRepository:
     """Repository de transactions factice en mémoire pour les tests unitaires."""
 
@@ -43,7 +50,10 @@ def test_get_wallet_use_case_returns_wallet():
     wallet = Wallet(user_id=user_id, balance=Decimal("150.00"))
     wallet_repo.save(wallet)
 
-    use_case = GetWalletUseCase(wallet_repo=wallet_repo)
+    use_case = GetWalletUseCase(
+        wallet_repo=wallet_repo,
+        wallet_asset_repo=InMemoryWalletAssetRepository(),
+    )
     result = use_case.execute(user_id)
 
     assert result is not None
@@ -54,7 +64,10 @@ def test_get_wallet_use_case_returns_wallet():
 def test_get_wallet_use_case_returns_none_if_not_found():
     """Vérifie que GetWalletUseCase retourne None si le portefeuille n'existe pas."""
     wallet_repo = InMemoryWalletRepository()
-    use_case = GetWalletUseCase(wallet_repo=wallet_repo)
+    use_case = GetWalletUseCase(
+        wallet_repo=wallet_repo,
+        wallet_asset_repo=InMemoryWalletAssetRepository(),
+    )
 
     result = use_case.execute(uuid4())
     assert result is None

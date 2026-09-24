@@ -26,11 +26,11 @@ def auth_user():
     )
     refresh = RefreshToken.for_user(user)
     token = str(refresh.access_token)
-    
+
     repo = WalletRepository()
     wallet = DomainWallet(user_id=UUID(int=user.id), balance=Decimal("100.00"))
     repo.save(wallet)
-    
+
     return user, token
 
 
@@ -101,7 +101,11 @@ def test_transfer_success(api_client, auth_user):
 
     response = api_client.post(
         "/wallets/transfer",
-        json={"recipient_id": str(UUID(int=recipient.id)), "amount": "40.00", "currency": "USD"},
+        json={
+            "recipient_id": str(UUID(int=recipient.id)),
+            "amount": "40.00",
+            "currency": "USD",
+        },
         headers={"Authorization": f"Bearer {token}"},
     )
 

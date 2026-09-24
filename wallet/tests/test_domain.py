@@ -2,7 +2,12 @@ from decimal import Decimal
 from uuid import uuid4
 import pytest
 
-from wallet.domain.entities import Wallet, Transaction, TransactionStatus, TransactionType
+from wallet.domain.entities import (
+    Wallet,
+    Transaction,
+    TransactionStatus,
+    TransactionType,
+)
 from wallet.domain.exceptions import InsufficientBalanceError, InvalidAmountError
 
 
@@ -44,7 +49,8 @@ def test_credit_raises_on_invalid_amount():
     wallet = Wallet(user_id=uuid4(), balance=Decimal("100.00"))
     with pytest.raises(InvalidAmountError):
         wallet.credit(Decimal("0.00"))
-        
+
+
 def test_transfer_success():
     source = Wallet(user_id=uuid4(), balance=Decimal("100.00"))
     target = Wallet(user_id=uuid4(), balance=Decimal("20.00"))
@@ -61,7 +67,8 @@ def test_transfer_insufficient_balance():
 
     with pytest.raises(InsufficientBalanceError):
         source.transfer(target, Decimal("50.00"))
-        
+
+
 def test_create_transaction_success():
     sender_id = uuid4()
     recipient_id = uuid4()

@@ -16,18 +16,38 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='WalletModel',
+            name="WalletModel",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('balance', models.DecimalField(decimal_places=2, default='0.00', max_digits=18)),
-                ('currency', models.CharField(default='USD', max_length=3)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='wallet', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "balance",
+                    models.DecimalField(
+                        decimal_places=2, default="0.00", max_digits=18
+                    ),
+                ),
+                ("currency", models.CharField(default="USD", max_length=3)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="wallet",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Wallet',
-                'verbose_name_plural': 'Wallets',
-                'db_table': 'wallets',
+                "verbose_name": "Wallet",
+                "verbose_name_plural": "Wallets",
+                "db_table": "wallets",
             },
         ),
     ]

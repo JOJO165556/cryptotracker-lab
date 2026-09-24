@@ -27,7 +27,7 @@ router = Router(tags=["Notifications"], auth=auth_jwt)
 def create_alert(request, payload: CreateAlertSchema):
     """
     Créer une alerte de prix pour l'utilisateur connecté
-    
+
     L'alerte se déclenchera lorsque le prix de l'actif atteindra
     le niveau cible dans la direction spécifiée (au-dessus ou en-dessous)
     """
@@ -45,7 +45,7 @@ def create_alert(request, payload: CreateAlertSchema):
 def delete_alert(request, alert_id: UUID):
     """
     Supprimer une alerte de prix
-    
+
     Permet à l'utilisateur de supprimer une alerte qu'il ne souhaite plus recevoir
     """
     use_case = DeletePriceAlertUseCase()
@@ -60,7 +60,7 @@ def delete_alert(request, alert_id: UUID):
 def list_alerts(request):
     """
     Lister toutes les alertes de prix de l'utilisateur connecté
-    
+
     Retourne toutes les alertes actives, qu'elles aient été déclenchées ou non
     """
     use_case = ListAlertsUseCase()
@@ -72,7 +72,7 @@ def list_alerts(request):
 def list_notifications(request):
     """
     Lister toutes les notifications de l'utilisateur connecté
-    
+
     Retourne l'historique complet des notifications, lues et non lues
     """
     use_case = ListNotificationsUseCase()
@@ -80,11 +80,13 @@ def list_notifications(request):
     return {"notifications": notifications}
 
 
-@router.post("/notifications/{notification_id}/read", response=NotificationResponseSchema)
+@router.post(
+    "/notifications/{notification_id}/read", response=NotificationResponseSchema
+)
 def mark_notification_as_read(request, notification_id: UUID):
     """
     Marquer une notification comme lue
-    
+
     Permet à l'utilisateur de marquer une notification spécifique comme lue
     """
     use_case = MarkNotificationAsReadUseCase()

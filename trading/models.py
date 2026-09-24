@@ -13,17 +13,15 @@ class OrderModel(models.Model):
     side = models.CharField(max_length=10)  # BUY, SELL
     type = models.CharField(max_length=10)  # MARKET, LIMIT
     status = models.CharField(max_length=20, default="PENDING", db_index=True)
-    
+
     quantity = models.DecimalField(max_digits=18, decimal_places=8)
-    filled_quantity = models.DecimalField(max_digits=18, decimal_places=8, default="0.00000000")
+    filled_quantity = models.DecimalField(
+        max_digits=18, decimal_places=8, default="0.00000000"
+    )
     price = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
-    
+
     idempotency_key = models.CharField(
-        max_length=255, 
-        unique=True, 
-        null=True, 
-        blank=True, 
-        db_index=True
+        max_length=255, unique=True, null=True, blank=True, db_index=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

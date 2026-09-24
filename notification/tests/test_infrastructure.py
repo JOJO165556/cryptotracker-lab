@@ -6,7 +6,10 @@ from django.contrib.auth import get_user_model
 
 from notification.domain.entities import Notification, PriceAlert
 from notification.domain.value_objects import AlertDirection, NotificationType
-from notification.infrastructure.repositories import NotificationRepository, PriceAlertRepository
+from notification.infrastructure.repositories import (
+    NotificationRepository,
+    PriceAlertRepository,
+)
 from notification.models import NotificationModel, PriceAlertModel
 
 User = get_user_model()
@@ -57,18 +60,22 @@ def test_price_alert_repository_get_by_id(user):
 def test_price_alert_repository_get_by_user_id(user):
     """Test de récupération des alertes d'un utilisateur"""
     repo = PriceAlertRepository()
-    repo.save(PriceAlert(
-        user_id=UUID(int=user.id),
-        asset_symbol="BTC",
-        target_price=Decimal("50000.00"),
-        direction=AlertDirection.ABOVE,
-    ))
-    repo.save(PriceAlert(
-        user_id=UUID(int=user.id),
-        asset_symbol="ETH",
-        target_price=Decimal("3000.00"),
-        direction=AlertDirection.BELOW,
-    ))
+    repo.save(
+        PriceAlert(
+            user_id=UUID(int=user.id),
+            asset_symbol="BTC",
+            target_price=Decimal("50000.00"),
+            direction=AlertDirection.ABOVE,
+        )
+    )
+    repo.save(
+        PriceAlert(
+            user_id=UUID(int=user.id),
+            asset_symbol="ETH",
+            target_price=Decimal("3000.00"),
+            direction=AlertDirection.BELOW,
+        )
+    )
 
     alerts = repo.get_by_user_id(user.id)
 
@@ -141,16 +148,20 @@ def test_notification_repository_get_by_id(user):
 def test_notification_repository_get_by_user_id(user):
     """Test de récupération des notifications d'un utilisateur"""
     repo = NotificationRepository()
-    repo.save(Notification(
-        user_id=UUID(int=user.id),
-        type=NotificationType.ALERT,
-        payload={"message": "Alert 1"},
-    ))
-    repo.save(Notification(
-        user_id=UUID(int=user.id),
-        type=NotificationType.TRANSACTION,
-        payload={"message": "Transaction 1"},
-    ))
+    repo.save(
+        Notification(
+            user_id=UUID(int=user.id),
+            type=NotificationType.ALERT,
+            payload={"message": "Alert 1"},
+        )
+    )
+    repo.save(
+        Notification(
+            user_id=UUID(int=user.id),
+            type=NotificationType.TRANSACTION,
+            payload={"message": "Transaction 1"},
+        )
+    )
 
     notifications = repo.get_by_user_id(user.id)
 

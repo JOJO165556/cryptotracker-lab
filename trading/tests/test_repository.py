@@ -13,15 +13,18 @@ def wallet(db):
     """Fixture créant un portefeuille en base pour rattacher les ordres."""
     import uuid
     from django.contrib.auth import get_user_model
+
     User = get_user_model()
     user = User.objects.create(username=f"user_{uuid.uuid4()}")
-    return WalletModel.objects.create(user=user, balance=Decimal("1000.00"), currency="USD")
+    return WalletModel.objects.create(
+        user=user, balance=Decimal("1000.00"), currency="USD"
+    )
 
 
 @pytest.mark.django_db
 def test_save_and_get_order(wallet):
     repo = OrderRepository()
-    
+
     order = Order(
         wallet_id=wallet.id,
         symbol="BTC/USD",
@@ -71,7 +74,7 @@ def test_get_by_idempotency_key(wallet):
 @pytest.mark.django_db
 def test_save_order_with_trade_atomically(wallet):
     repo = OrderRepository()
-    
+
     order = Order(
         wallet_id=wallet.id,
         symbol="BTC/USD",
@@ -82,7 +85,9 @@ def test_save_order_with_trade_atomically(wallet):
     saved_order = repo.save(order)
 
     # Exécution du domaine et création du Trade
-    trade = saved_order.execute(execution_price=Decimal("52000.00"), quantity=Decimal("2.0"))
+    trade = saved_order.execute(
+        execution_price=Decimal("52000.00"), quantity=Decimal("2.0")
+    )
 
     # Sauvegarde atomique
     updated_order, saved_trade = repo.save_order_with_trade(saved_order, trade)

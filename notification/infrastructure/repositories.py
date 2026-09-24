@@ -1,7 +1,11 @@
 from uuid import UUID
 
 from notification.domain.entities import Notification, PriceAlert
-from notification.domain.value_objects import AlertDirection, NotificationStatus, NotificationType
+from notification.domain.value_objects import (
+    AlertDirection,
+    NotificationStatus,
+    NotificationType,
+)
 from notification.models import NotificationModel, PriceAlertModel
 
 
@@ -22,9 +26,12 @@ class PriceAlertRepository:
 
     def save(self, alert: PriceAlert) -> PriceAlert:
         from django.contrib.auth import get_user_model
+
         User = get_user_model()
 
-        user_id_int = alert.user_id.int if isinstance(alert.user_id, UUID) else alert.user_id
+        user_id_int = (
+            alert.user_id.int if isinstance(alert.user_id, UUID) else alert.user_id
+        )
         user = User.objects.get(id=user_id_int)
         model, _ = PriceAlertModel.objects.update_or_create(
             id=alert.id,
@@ -81,9 +88,14 @@ class NotificationRepository:
 
     def save(self, notification: Notification) -> Notification:
         from django.contrib.auth import get_user_model
+
         User = get_user_model()
 
-        user_id_int = notification.user_id.int if isinstance(notification.user_id, UUID) else notification.user_id
+        user_id_int = (
+            notification.user_id.int
+            if isinstance(notification.user_id, UUID)
+            else notification.user_id
+        )
         user = User.objects.get(id=user_id_int)
         model, _ = NotificationModel.objects.update_or_create(
             id=notification.id,

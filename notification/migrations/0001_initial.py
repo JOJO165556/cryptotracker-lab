@@ -16,40 +16,73 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='NotificationModel',
+            name="NotificationModel",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('type', models.CharField(db_index=True, max_length=20)),
-                ('payload', models.JSONField(default=dict)),
-                ('status', models.CharField(db_index=True, default='UNREAD', max_length=10)),
-                ('read_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("type", models.CharField(db_index=True, max_length=20)),
+                ("payload", models.JSONField(default=dict)),
+                (
+                    "status",
+                    models.CharField(db_index=True, default="UNREAD", max_length=10),
+                ),
+                ("read_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Notification',
-                'verbose_name_plural': 'Notifications',
-                'db_table': 'notifications',
-                'ordering': ['-created_at'],
+                "verbose_name": "Notification",
+                "verbose_name_plural": "Notifications",
+                "db_table": "notifications",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='PriceAlertModel',
+            name="PriceAlertModel",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('asset_symbol', models.CharField(db_index=True, max_length=20)),
-                ('target_price', models.DecimalField(decimal_places=8, max_digits=18)),
-                ('direction', models.CharField(max_length=10)),
-                ('triggered_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='price_alerts', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("asset_symbol", models.CharField(db_index=True, max_length=20)),
+                ("target_price", models.DecimalField(decimal_places=8, max_digits=18)),
+                ("direction", models.CharField(max_length=10)),
+                ("triggered_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="price_alerts",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Price Alert',
-                'verbose_name_plural': 'Price Alerts',
-                'db_table': 'notification_price_alerts',
-                'ordering': ['-created_at'],
+                "verbose_name": "Price Alert",
+                "verbose_name_plural": "Price Alerts",
+                "db_table": "notification_price_alerts",
+                "ordering": ["-created_at"],
             },
         ),
     ]

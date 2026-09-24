@@ -3,7 +3,11 @@ from uuid import uuid4
 import pytest
 
 from trading.domain.entities import Order, Trade
-from trading.domain.exceptions import InvalidAmountError, InvalidOrderStateError, InvalidPriceError
+from trading.domain.exceptions import (
+    InvalidAmountError,
+    InvalidOrderStateError,
+    InvalidPriceError,
+)
 from trading.domain.value_objects import OrderSide, OrderStatus, OrderType
 
 
