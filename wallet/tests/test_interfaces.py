@@ -1,5 +1,5 @@
 from decimal import Decimal
-from uuid import uuid4
+from uuid import uuid4, UUID
 import pytest
 from django.contrib.auth import get_user_model
 from ninja.testing import TestClient
@@ -28,7 +28,7 @@ def auth_user():
     token = str(refresh.access_token)
     
     repo = WalletRepository()
-    wallet = DomainWallet(user_id=user.id, balance=Decimal("100.00"))
+    wallet = DomainWallet(user_id=UUID(int=user.id), balance=Decimal("100.00"))
     repo.save(wallet)
     
     return user, token
@@ -97,11 +97,11 @@ def test_transfer_success(api_client, auth_user):
         password="Password123!",
     )
     repo = WalletRepository()
-    repo.save(DomainWallet(user_id=recipient.id, balance=Decimal("10.00")))
+    repo.save(DomainWallet(user_id=UUID(int=recipient.id), balance=Decimal("10.00")))
 
     response = api_client.post(
         "/wallets/transfer",
-        json={"recipient_id": str(recipient.id), "amount": "40.00", "currency": "USD"},
+        json={"recipient_id": str(UUID(int=recipient.id)), "amount": "40.00", "currency": "USD"},
         headers={"Authorization": f"Bearer {token}"},
     )
 

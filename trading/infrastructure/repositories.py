@@ -11,10 +11,13 @@ class OrderRepository:
 
     def save(self, order: Order) -> Order:
         """Persiste ou met à jour un ordre en BD."""
+        from wallet.models import WalletModel
+
+        wallet = WalletModel.objects.get(id=order.wallet_id)
         model, _ = OrderModel.objects.update_or_create(
             id=order.id,
             defaults={
-                "wallet_id": order.wallet_id,
+                "wallet": wallet,
                 "symbol": order.symbol,
                 "side": order.side.value if isinstance(order.side, OrderSide) else order.side,
                 "type": order.type.value if isinstance(order.type, OrderType) else order.type,
@@ -29,7 +32,7 @@ class OrderRepository:
 
     def get_by_id(self, order_id: UUID) -> Order | None:
         try:
-            model = OrderModel.objects.get(id=order_id)
+            model = OrderModel.objects.select_related('wallet').get(id=order_id)
             return self._to_domain(model)
         except OrderModel.DoesNotExist:
             return None
@@ -38,7 +41,7 @@ class OrderRepository:
         if not key:
             return None
         try:
-            model = OrderModel.objects.get(idempotency_key=key)
+            model = OrderModel.objects.select_related('wallet').get(idempotency_key=key)
             return self._to_domain(model)
         except OrderModel.DoesNotExist:
             return None
@@ -63,10 +66,26 @@ class OrderRepository:
         )
         return saved_order, saved_trade
 
+    def list_paginated(self, page: int = 1, page_size: int = 10) -> tuple[list[Order], int]:
+        """Liste les ordres avec pagination."""
+        offset = (page - 1) * page_size
+        models = OrderModel.objects.select_related('wallet').all()[offset:offset + page_size]
+        total = OrderModel.objects.count()
+        orders = [self._to_domain(model) for model in models]
+        return orders, total
+
+    def list_trades_paginated(self, page: int = 1, page_size: int = 10) -> tuple[list[Trade], int]:
+        """Liste les trades avec pagination."""
+        offset = (page - 1) * page_size
+        models = TradeModel.objects.select_related('order').all()[offset:offset + page_size]
+        total = TradeModel.objects.count()
+        trades = [self._to_trade_domain(model) for model in models]
+        return trades, total
+
     def _to_domain(self, model: OrderModel) -> Order:
         return Order(
             id=model.id,
-            wallet_id=model.wallet_id,
+            wallet_id=model.wallet.id,
             symbol=model.symbol,
             side=OrderSide(model.side),
             type=OrderType(model.type),
@@ -76,4 +95,13 @@ class OrderRepository:
             price=model.price,
             idempotency_key=model.idempotency_key,
             created_at=model.created_at,
+        )
+
+    def _to_trade_domain(self, model: TradeModel) -> Trade:
+        return Trade(
+            id=model.id,
+            order_id=model.order.id,
+            price=model.price,
+            quantity=model.quantity,
+            executed_at=model.executed_at,
         )

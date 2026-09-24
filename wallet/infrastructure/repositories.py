@@ -8,9 +8,10 @@ from wallet.models import TransactionModel, WalletModel
 class WalletRepository:
     """Repository gérant l'accès aux données et la persistance des portefeuilles."""
 
-    def get_by_user_id(self, user_id: UUID) -> Wallet | None:
+    def get_by_user_id(self, user_id: UUID | int) -> Wallet | None:
         try:
-            model = WalletModel.objects.get(user_id=user_id)
+            user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
+            model = WalletModel.objects.get(user_id=user_id_int)
             return self._to_domain(model)
         except WalletModel.DoesNotExist:
             return None
@@ -23,10 +24,11 @@ class WalletRepository:
             return None
 
     def save(self, wallet: Wallet) -> Wallet:
+        user_id = wallet.user_id.int if isinstance(wallet.user_id, UUID) else wallet.user_id
         model, _ = WalletModel.objects.update_or_create(
             id=wallet.id,
             defaults={
-                "user_id": wallet.user_id,
+                "user_id": user_id,
                 "balance": wallet.balance,
                 "currency": wallet.currency,
             },
@@ -34,9 +36,10 @@ class WalletRepository:
         return self._to_domain(model)
 
     def _to_domain(self, model: WalletModel) -> Wallet:
+        user_id = model.user_id if isinstance(model.user_id, UUID) else UUID(int=model.user_id)
         return Wallet(
             id=model.id,
-            user_id=model.user_id,
+            user_id=user_id,
             balance=model.balance,
             currency=model.currency,
             updated_at=model.updated_at,
