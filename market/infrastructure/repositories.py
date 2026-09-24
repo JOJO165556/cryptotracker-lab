@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from market.domain.entities import Asset
-from market.models import AssetModel
+from market.domain.entities import Asset, Price
+from market.models import AssetModel, PriceModel
 
 
 class AssetRepository:
@@ -51,4 +51,43 @@ class AssetRepository:
             is_active=model.is_active,
             current_price=model.current_price,
             price_updated_at=model.price_updated_at,
+        )
+
+
+class PriceRepository:
+    """Repository gérant la persistance de l'historique des prix."""
+
+    def save(self, price: Price) -> Price:
+        """Enregistre un nouveau point de prix (append-only, pas d'update)."""
+        model = PriceModel.objects.create(
+            id=price.id,
+            asset_symbol=price.asset_symbol.upper(),
+            value=price.value,
+            recorded_at=price.recorded_at,
+        )
+        return self._to_domain(model)
+
+    def list_by_symbol(self, symbol: str, limit: int = 100) -> list[Price]:
+        """Retourne les N derniers prix enregistrés pour un symbole."""
+        models = PriceModel.objects.filter(asset_symbol=symbol.upper()).order_by(
+            "-recorded_at"
+        )[:limit]
+        return [self._to_domain(m) for m in models]
+
+    def get_latest(self, symbol: str) -> Price | None:
+        """Retourne le dernier prix enregistré pour un symbole."""
+        try:
+            model = PriceModel.objects.filter(asset_symbol=symbol.upper()).latest(
+                "recorded_at"
+            )
+            return self._to_domain(model)
+        except PriceModel.DoesNotExist:
+            return None
+
+    def _to_domain(self, model: PriceModel) -> Price:
+        return Price(
+            id=model.id,
+            asset_symbol=model.asset_symbol,
+            value=model.value,
+            recorded_at=model.recorded_at,
         )

@@ -1,15 +1,37 @@
 from decimal import Decimal
 from uuid import UUID
 
-from wallet.domain.entities import Transaction, TransactionType, Wallet
+from wallet.domain.entities import Transaction, TransactionType, Wallet, WalletAsset
 from wallet.domain.exceptions import WalletNotFoundError
-from wallet.infrastructure.repositories import TransactionRepository, WalletRepository
+from wallet.infrastructure.repositories import (
+    TransactionRepository,
+    WalletAssetRepository,
+    WalletRepository,
+)
+
+
+class WalletWithPositions:
+    """
+    Objet de transfert combinant le Wallet et ses positions WalletAsset
+    Utilisé par l'interface API pour sérialiser GET /wallets/me
+    """
+
+    def __init__(self, wallet: Wallet, positions: list[WalletAsset]) -> None:
+        # Expose tous les attributs du wallet directement
+        self.id = wallet.id
+        self.user_id = wallet.user_id
+        self.balance = wallet.balance
+        self.currency = wallet.currency
+        self.updated_at = wallet.updated_at
+        self.positions = positions
 
 
 class TransferResult:
     """Résultat d'un transfert exposant la transaction et les deux wallets."""
 
-    def __init__(self, transaction: Transaction, sender: Wallet, recipient: Wallet) -> None:
+    def __init__(
+        self, transaction: Transaction, sender: Wallet, recipient: Wallet
+    ) -> None:
         self.transaction = transaction
         self.sender = sender
         self.recipient = recipient
@@ -30,13 +52,22 @@ def _find_wallet(repository: WalletRepository, wallet_id: UUID) -> Wallet | None
 
 
 class GetWalletUseCase:
-    """Cas d'usage : Récupération du portefeuille d'un utilisateur."""
+    """Cas d'usage : Récupération du portefeuille d'un utilisateur avec ses positions."""
 
-    def __init__(self, wallet_repo: WalletRepository) -> None:
+    def __init__(
+        self,
+        wallet_repo: WalletRepository,
+        wallet_asset_repo: WalletAssetRepository | None = None,
+    ) -> None:
         self.wallet_repo = wallet_repo
+        self.wallet_asset_repo = wallet_asset_repo or WalletAssetRepository()
 
-    def execute(self, user_id: UUID) -> Wallet | None:
-        return self.wallet_repo.get_by_user_id(user_id)
+    def execute(self, user_id: UUID) -> WalletWithPositions | None:
+        wallet = self.wallet_repo.get_by_user_id(user_id)
+        if wallet is None:
+            return None
+        positions = self.wallet_asset_repo.list_by_wallet_id(wallet.id)
+        return WalletWithPositions(wallet=wallet, positions=positions)
 
 
 class CreditWalletUseCase:
@@ -78,7 +109,9 @@ class CreditWalletUseCase:
             wallet.credit(amount)
             tx.mark_completed()
 
-            save_with_transaction = getattr(self.wallet_repo, "save_with_transaction", None)
+            save_with_transaction = getattr(
+                self.wallet_repo, "save_with_transaction", None
+            )
             if save_with_transaction:
                 wallet, _ = save_with_transaction(wallet, tx)
             else:
@@ -131,7 +164,9 @@ class DebitWalletUseCase:
             wallet.debit(amount)
             tx.mark_completed()
 
-            save_with_transaction = getattr(self.wallet_repo, "save_with_transaction", None)
+            save_with_transaction = getattr(
+                self.wallet_repo, "save_with_transaction", None
+            )
             if save_with_transaction:
                 wallet, _ = save_with_transaction(wallet, tx)
             else:
@@ -167,7 +202,9 @@ class TransferWalletUseCase:
             existing_tx = self.transaction_repo.get_by_idempotency_key(idempotency_key)
             if existing_tx:
                 sender_wallet = _find_wallet(self.wallet_repo, existing_tx.sender_id)
-                recipient_wallet = _find_wallet(self.wallet_repo, existing_tx.recipient_id)
+                recipient_wallet = _find_wallet(
+                    self.wallet_repo, existing_tx.recipient_id
+                )
                 if sender_wallet and recipient_wallet:
                     return TransferResult(existing_tx, sender_wallet, recipient_wallet)
 
