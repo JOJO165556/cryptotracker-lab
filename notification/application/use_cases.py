@@ -4,13 +4,16 @@ from uuid import UUID
 from notification.domain.entities import Notification, PriceAlert
 from notification.domain.exceptions import AlertNotFoundException
 from notification.domain.value_objects import AlertDirection, NotificationType
-from notification.infrastructure.repositories import NotificationRepository, PriceAlertRepository
+from notification.infrastructure.repositories import (
+    NotificationRepository,
+    PriceAlertRepository,
+)
 
 
 class CreatePriceAlertUseCase:
     """
     Cas d'usage : Créer une alerte de prix pour un utilisateur
-    
+
     Permet à un utilisateur de configurer une alerte qui se déclenchera
     lorsque le prix d'un actif atteint un niveau cible (au-dessus ou en-dessous)
     """
@@ -38,7 +41,7 @@ class CreatePriceAlertUseCase:
 class DeletePriceAlertUseCase:
     """
     Cas d'usage : Supprimer une alerte de prix
-    
+
     Permet à un utilisateur de supprimer une alerte
     qu'il ne souhaite plus recevoir
     """
@@ -56,7 +59,7 @@ class DeletePriceAlertUseCase:
 class ListAlertsUseCase:
     """
     Cas d'usage : Lister toutes les alertes de prix d'un utilisateur
-    
+
     Permet à un utilisateur de consulter toutes ses alertes
     actives, qu'elles aient été déclenchées ou non
     """
@@ -71,7 +74,7 @@ class ListAlertsUseCase:
 class CreateNotificationUseCase:
     """
     Cas d'usage : Créer une notification pour un utilisateur
-    
+
     Utilisé par le système pour générer des notifications
     (alertes de prix déclenchées, confirmations de transaction, messages système)
     """
@@ -97,7 +100,7 @@ class CreateNotificationUseCase:
 class ListNotificationsUseCase:
     """
     Cas d'usage : Lister toutes les notifications d'un utilisateur
-    
+
     Permet à un utilisateur de consulter son historique
     de notifications, lues et non lues
     """
@@ -112,7 +115,7 @@ class ListNotificationsUseCase:
 class MarkNotificationAsReadUseCase:
     """
     Cas d'usage : Marquer une notification comme lue
-    
+
     Permet à un utilisateur de marquer une notification
     spécifique comme lue
     """

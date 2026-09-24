@@ -4,7 +4,11 @@ import pytest
 
 from notification.domain.entities import Notification, PriceAlert
 from notification.domain.exceptions import InvalidAlertError
-from notification.domain.value_objects import AlertDirection, NotificationStatus, NotificationType
+from notification.domain.value_objects import (
+    AlertDirection,
+    NotificationStatus,
+    NotificationType,
+)
 
 
 def test_price_alert_creation_success():

@@ -8,22 +8,37 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('wallet', '0001_initial'),
+        ("wallet", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TransactionModel',
+            name="TransactionModel",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('amount', models.DecimalField(decimal_places=8, max_digits=18)),
-                ('type', models.CharField(max_length=20)),
-                ('status', models.CharField(default='COMPLETED', max_length=20)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('wallet', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transactions', to='wallet.walletmodel')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("amount", models.DecimalField(decimal_places=8, max_digits=18)),
+                ("type", models.CharField(max_length=20)),
+                ("status", models.CharField(default="COMPLETED", max_length=20)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "wallet",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="transactions",
+                        to="wallet.walletmodel",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'wallet_transactions',
+                "db_table": "wallet_transactions",
             },
         ),
     ]

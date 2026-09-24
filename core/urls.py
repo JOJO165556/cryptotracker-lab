@@ -17,6 +17,6 @@ api.add_router("/market/", market_router)
 api.add_router("/notifications/", notification_router)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("api/", api.urls),
 ]

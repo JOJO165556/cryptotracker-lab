@@ -6,14 +6,18 @@ from uuid import UUID, uuid4
 import json
 
 from notification.domain.exceptions import InvalidAlertError
-from notification.domain.value_objects import AlertDirection, NotificationStatus, NotificationType
+from notification.domain.value_objects import (
+    AlertDirection,
+    NotificationStatus,
+    NotificationType,
+)
 
 
 @dataclass
 class Notification:
     """
     Entité représentant une notification pour un utilisateur
-    
+
     Encapsule les règles métier liées aux notifications :
     typage, marquage comme lu, et payload structuré
     """
@@ -50,7 +54,7 @@ class Notification:
 class PriceAlert:
     """
     Entité représentant une alerte de prix pour un utilisateur
-    
+
     Encapsule les règles métier liées aux alertes de prix :
     validation du prix cible, direction (au-dessus/en-dessous),
     et gestion du déclenchement unique
@@ -69,12 +73,14 @@ class PriceAlert:
         if self.target_price <= Decimal("0"):
             raise InvalidAlertError("Le prix cible doit être strictement positif")
         if not self.asset_symbol or len(self.asset_symbol) > 20:
-            raise InvalidAlertError("Le symbole de l'actif doit être une chaîne non vide de max 20 caractères")
+            raise InvalidAlertError(
+                "Le symbole de l'actif doit être une chaîne non vide de max 20 caractères"
+            )
 
     def check_trigger(self, current_price: Decimal) -> bool:
         """
         Vérifie si l'alerte doit être déclenchée selon le prix actuel
-        
+
         Returns True si l'alerte doit être déclenchée, False sinon
         Une alerte déjà déclenchée ne se redéclenche jamais
         """
@@ -89,7 +95,7 @@ class PriceAlert:
     def trigger(self) -> None:
         """
         Déclenche l'alerte avec horodatage
-        
+
         Une fois déclenchée, l'alerte ne peut plus être réactivée
         sans intervention manuelle de l'utilisateur
         """
@@ -100,7 +106,7 @@ class PriceAlert:
     def reset(self) -> None:
         """
         Réinitialise l'alerte pour permettre un nouveau déclenchement
-        
+
         Utilisé lorsque l'utilisateur souhaite réactiver une alerte
         précédemment déclenchée
         """

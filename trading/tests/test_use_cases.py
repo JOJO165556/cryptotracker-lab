@@ -14,9 +14,13 @@ from wallet.models import WalletModel
 def wallet(db):
     import uuid
     from django.contrib.auth import get_user_model
+
     User = get_user_model()
     user = User.objects.create(username=f"user_{uuid.uuid4()}")
-    return WalletModel.objects.create(user=user, balance=Decimal("1000.00"), currency="USD")
+    # solde suffisant pour couvrir 2 BTC à 45000 USD = 90000 USD
+    return WalletModel.objects.create(
+        user=user, balance=Decimal("100000.00"), currency="USD"
+    )
 
 
 @pytest.mark.django_db

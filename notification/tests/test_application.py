@@ -15,7 +15,10 @@ from notification.application.use_cases import (
 from notification.domain.entities import Notification, PriceAlert
 from notification.domain.exceptions import AlertNotFoundException
 from notification.domain.value_objects import AlertDirection, NotificationType
-from notification.infrastructure.repositories import NotificationRepository, PriceAlertRepository
+from notification.infrastructure.repositories import (
+    NotificationRepository,
+    PriceAlertRepository,
+)
 
 User = get_user_model()
 

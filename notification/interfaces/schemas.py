@@ -4,7 +4,11 @@ from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
-from notification.domain.value_objects import AlertDirection, NotificationStatus, NotificationType
+from notification.domain.value_objects import (
+    AlertDirection,
+    NotificationStatus,
+    NotificationType,
+)
 
 
 class CreateAlertSchema(BaseModel):
