@@ -4,16 +4,18 @@ from ninja import Header, Router
 from ninja.errors import HttpError
 
 from trading.application.use_cases import (
-    CreateOrderInputDTO,
     CreateOrderUseCase,
-    ExecuteTradeInputDTO,
     ExecuteTradeUseCase,
+    ListOrdersUseCase,
+    ListTransactionsUseCase,
 )
 from trading.domain.exceptions import TradingDomainException
 from trading.interfaces.schemas import (
     CreateOrderSchema,
     ExecuteTradeSchema,
     OrderResponseSchema,
+    PaginatedOrdersResponseSchema,
+    PaginatedTradesResponseSchema,
     TradeResponseSchema,
 )
 
@@ -27,13 +29,13 @@ def create_order(
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
     """Créer un ordre de trading ou restituer un ordre existant si la clé d'idempotence correspond.
-    
+
     Toutes les violations de règles du domaine (ex: prix manquant pour un ordre LIMIT)
     sont capturées et renvoyées sous forme d'erreur HTTP 400.
     """
     use_case = CreateOrderUseCase()
     try:
-        dto = CreateOrderInputDTO(
+        return use_case.execute(
             wallet_id=payload.wallet_id,
             symbol=payload.symbol,
             side=payload.side,
@@ -42,7 +44,6 @@ def create_order(
             price=payload.price,
             idempotency_key=idempotency_key,
         )
-        return use_case.execute(dto)
     except TradingDomainException as e:
         raise HttpError(400, str(e))
 
@@ -52,14 +53,27 @@ def execute_trade(request, order_id: UUID, payload: ExecuteTradeSchema):
     """Exécuter un ordre partiellement ou totalement."""
     use_case = ExecuteTradeUseCase()
     try:
-        dto = ExecuteTradeInputDTO(
+        _, trade = use_case.execute(
             order_id=order_id,
             execution_price=payload.execution_price,
             quantity=payload.quantity,
         )
-        _, trade = use_case.execute(dto)
         return trade
     except TradingDomainException as e:
         raise HttpError(400, str(e))
     except ValueError as e:
         raise HttpError(404, str(e))
+    
+
+@router.get("/orders/", response=PaginatedOrdersResponseSchema)
+def list_orders(request, page: int = 1, page_size: int = 10):
+    """Consulter l'historique des ordres avec pagination."""
+    use_case = ListOrdersUseCase()
+    return use_case.execute(page=page, page_size=page_size)
+
+
+@router.get("/transactions/", response=PaginatedTradesResponseSchema)
+def list_transactions(request, page: int = 1, page_size: int = 10):
+    """Consulter l'historique des transactions exécutées avec pagination."""
+    use_case = ListTransactionsUseCase()
+    return use_case.execute(page=page, page_size=page_size)

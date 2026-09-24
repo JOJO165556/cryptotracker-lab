@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 from ninja import Schema
 
@@ -46,3 +46,17 @@ class TradeResponseSchema(Schema):
     order_id: UUID
     price: Decimal
     quantity: Decimal
+    
+
+class PaginatedOrdersResponseSchema(Schema):
+    """Réponse paginée pour l'historique des ordres."""
+
+    count: int
+    results: List[OrderResponseSchema]
+
+
+class PaginatedTradesResponseSchema(Schema):
+    """Réponse paginée pour l'historique des transactions."""
+
+    count: int
+    results: List[TradeResponseSchema]

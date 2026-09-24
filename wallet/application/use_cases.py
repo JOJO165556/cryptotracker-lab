@@ -3,10 +3,7 @@ from uuid import UUID
 
 from wallet.domain.entities import Transaction, TransactionType, Wallet
 from wallet.domain.exceptions import WalletNotFoundError
-from wallet.domain.repositories import (
-    TransactionRepositoryInterface,
-    WalletRepositoryInterface,
-)
+from wallet.infrastructure.repositories import TransactionRepository, WalletRepository
 
 
 class TransferResult:
@@ -25,7 +22,7 @@ class TransferResult:
         yield self.recipient
 
 
-def _find_wallet(repository: WalletRepositoryInterface, wallet_id: UUID) -> Wallet | None:
+def _find_wallet(repository: WalletRepository, wallet_id: UUID) -> Wallet | None:
     get_by_id = getattr(repository, "get_by_id", None)
     if get_by_id:
         return get_by_id(wallet_id)
@@ -35,7 +32,7 @@ def _find_wallet(repository: WalletRepositoryInterface, wallet_id: UUID) -> Wall
 class GetWalletUseCase:
     """Cas d'usage : Récupération du portefeuille d'un utilisateur."""
 
-    def __init__(self, wallet_repo: WalletRepositoryInterface) -> None:
+    def __init__(self, wallet_repo: WalletRepository) -> None:
         self.wallet_repo = wallet_repo
 
     def execute(self, user_id: UUID) -> Wallet | None:
@@ -47,8 +44,8 @@ class CreditWalletUseCase:
 
     def __init__(
         self,
-        wallet_repo: WalletRepositoryInterface,
-        transaction_repo: TransactionRepositoryInterface,
+        wallet_repo: WalletRepository,
+        transaction_repo: TransactionRepository,
     ) -> None:
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
@@ -100,8 +97,8 @@ class DebitWalletUseCase:
 
     def __init__(
         self,
-        wallet_repo: WalletRepositoryInterface,
-        transaction_repo: TransactionRepositoryInterface,
+        wallet_repo: WalletRepository,
+        transaction_repo: TransactionRepository,
     ) -> None:
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
@@ -153,8 +150,8 @@ class TransferWalletUseCase:
 
     def __init__(
         self,
-        wallet_repo: WalletRepositoryInterface,
-        transaction_repo: TransactionRepositoryInterface,
+        wallet_repo: WalletRepository,
+        transaction_repo: TransactionRepository,
     ) -> None:
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo

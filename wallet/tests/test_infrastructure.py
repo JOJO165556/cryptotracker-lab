@@ -1,5 +1,5 @@
 from decimal import Decimal
-from uuid import uuid4
+from uuid import uuid4, UUID
 import pytest
 from django.contrib.auth import get_user_model
 from wallet.domain.entities import Transaction, TransactionType, Wallet as DomainWallet
@@ -18,7 +18,7 @@ def test_wallet_repository_save_and_get():
         password="password123",
     )
     repository = WalletRepository()
-    domain_wallet = DomainWallet(user_id=user.id, balance=Decimal("250.50"))
+    domain_wallet = DomainWallet(user_id=UUID(int=user.id), balance=Decimal("250.50"))
 
     # Persistance de l'entité domaine
     saved_wallet = repository.save(domain_wallet)
@@ -36,7 +36,7 @@ def test_wallet_repository_save_and_get():
     assert retrieved_wallet is not None
     assert isinstance(retrieved_wallet, DomainWallet)
     assert retrieved_wallet.id == domain_wallet.id
-    assert retrieved_wallet.user_id == user.id
+    assert retrieved_wallet.user_id == UUID(int=user.id)
     assert retrieved_wallet.balance == Decimal("250.50")
 
 
@@ -49,7 +49,7 @@ def test_wallet_repository_save_updates_existing_wallet():
         password="password123",
     )
     repository = WalletRepository()
-    domain_wallet = DomainWallet(user_id=user.id, balance=Decimal("100.00"))
+    domain_wallet = DomainWallet(user_id=UUID(int=user.id), balance=Decimal("100.00"))
     repository.save(domain_wallet)
 
     # Modification du solde et nouvelle sauvegarde
@@ -79,8 +79,8 @@ def test_transaction_repository_persists_participants_and_idempotency_key():
         email="recipient@example.com",
     )
     wallet_repository = WalletRepository()
-    sender = wallet_repository.save(DomainWallet(user_id=sender_user.id, balance=Decimal("100.00")))
-    recipient = wallet_repository.save(DomainWallet(user_id=recipient_user.id, balance=Decimal("20.00")))
+    sender = wallet_repository.save(DomainWallet(user_id=UUID(int=sender_user.id), balance=Decimal("100.00")))
+    recipient = wallet_repository.save(DomainWallet(user_id=UUID(int=recipient_user.id), balance=Decimal("20.00")))
     transaction_repository = TransactionRepository()
 
     transaction = transaction_repository.save(

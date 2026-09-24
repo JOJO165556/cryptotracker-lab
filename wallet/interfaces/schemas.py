@@ -8,7 +8,7 @@ class WalletOutSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    user_id: int | UUID
+    user_id: UUID
     balance: Decimal = Field(max_digits=18, decimal_places=8)
     currency: str = "USD"
     updated_at: datetime
@@ -35,6 +35,6 @@ class TransactionOutSchema(BaseModel):
     created_at: datetime
     
 class TransferSchema(BaseModel):
-    recipient_id: UUID | int
+    recipient_id: UUID
     amount: Decimal = Field(gt=0, max_digits=18, decimal_places=8)
     currency: str = "USD"

@@ -3,9 +3,7 @@ from uuid import uuid4
 import pytest
 
 from trading.application.use_cases import (
-    CreateOrderInputDTO,
     CreateOrderUseCase,
-    ExecuteTradeInputDTO,
     ExecuteTradeUseCase,
 )
 from trading.domain.value_objects import OrderSide, OrderStatus, OrderType
@@ -24,15 +22,13 @@ def wallet(db):
 @pytest.mark.django_db
 def test_create_order_use_case_success(wallet):
     use_case = CreateOrderUseCase()
-    dto = CreateOrderInputDTO(
+    order = use_case.execute(
         wallet_id=wallet.id,
         symbol="BTC/USD",
         side=OrderSide.BUY,
         type=OrderType.MARKET,
         quantity=Decimal("1.0"),
     )
-
-    order = use_case.execute(dto)
 
     assert order.id is not None
     assert order.status == OrderStatus.PENDING
@@ -43,8 +39,8 @@ def test_create_order_use_case_success(wallet):
 def test_create_order_use_case_idempotency(wallet):
     use_case = CreateOrderUseCase()
     key = "idempotent-key-12345"
-    
-    dto = CreateOrderInputDTO(
+
+    order1 = use_case.execute(
         wallet_id=wallet.id,
         symbol="ETH/USD",
         side=OrderSide.SELL,
@@ -53,8 +49,14 @@ def test_create_order_use_case_idempotency(wallet):
         idempotency_key=key,
     )
 
-    order1 = use_case.execute(dto)
-    order2 = use_case.execute(dto)
+    order2 = use_case.execute(
+        wallet_id=wallet.id,
+        symbol="ETH/USD",
+        side=OrderSide.SELL,
+        type=OrderType.MARKET,
+        quantity=Decimal("5.0"),
+        idempotency_key=key,
+    )
 
     assert order1.id == order2.id
 
@@ -63,22 +65,18 @@ def test_create_order_use_case_idempotency(wallet):
 def test_execute_trade_use_case_success(wallet):
     create_uc = CreateOrderUseCase()
     order = create_uc.execute(
-        CreateOrderInputDTO(
-            wallet_id=wallet.id,
-            symbol="BTC/USD",
-            side=OrderSide.BUY,
-            type=OrderType.MARKET,
-            quantity=Decimal("2.0"),
-        )
+        wallet_id=wallet.id,
+        symbol="BTC/USD",
+        side=OrderSide.BUY,
+        type=OrderType.MARKET,
+        quantity=Decimal("2.0"),
     )
 
     execute_uc = ExecuteTradeUseCase()
     updated_order, trade = execute_uc.execute(
-        ExecuteTradeInputDTO(
-            order_id=order.id,
-            execution_price=Decimal("45000.00"),
-            quantity=Decimal("2.0"),
-        )
+        order_id=order.id,
+        execution_price=Decimal("45000.00"),
+        quantity=Decimal("2.0"),
     )
 
     assert updated_order.status == OrderStatus.FILLED
