@@ -95,6 +95,9 @@ class TransactionModel(models.Model):
         max_length=255, unique=True, null=True, blank=True
     )
     failure_reason = models.TextField(null=True, blank=True)
+    reference_id = models.UUIDField(
+        null=True, blank=True, db_index=True
+    )  # UUID de l'entité source (Trade, Order...)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

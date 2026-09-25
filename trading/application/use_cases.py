@@ -5,7 +5,7 @@ from trading.domain.entities import Order, Trade
 from trading.domain.exceptions import TradingDomainException
 from trading.domain.value_objects import OrderSide, OrderStatus, OrderType
 from trading.infrastructure.repositories import OrderRepository
-from wallet.application.use_cases import DebitWalletUseCase, CreditWalletUseCase
+from wallet.domain.entities import Transaction, TransactionType, WalletAsset
 from wallet.domain.exceptions import InsufficientBalanceError, WalletNotFoundError
 from wallet.infrastructure.repositories import (
     WalletAssetRepository,
@@ -15,7 +15,12 @@ from wallet.infrastructure.repositories import (
 
 
 class CreateOrderUseCase:
-    """Use case d'orchestration pour la création d'un ordre de trading."""
+    """
+    Cas d'usage : créer un ordre de trading
+
+    Vérifie l'idempotence avant toute création et si une clé identique
+    existe déjà, l'ordre existant est retourné sans doublon
+    """
 
     def __init__(self, order_repository: OrderRepository | None = None):
         self.order_repository = order_repository or OrderRepository()
@@ -55,17 +60,18 @@ class CreateOrderUseCase:
 
 class ExecuteTradeUseCase:
     """
-    Use case d'exécution (partielle ou totale) d'un ordre sur le marché.
+    Cas d'usage : exécuter un ordre (partiellement ou totalement)
 
     Séquence :
-      1. Charger l'ordre et valider qu'il est exécutable.
-      2. Appliquer la règle métier Order.execute() → Trade.
-      3. Débiter le wallet (si BUY) ou créditer (si SELL).
-      4. Mettre à jour la position WalletAsset.
-      5. Persister atomiquement ordre + trade (via OrderRepository).
+      1. Charger l'ordre et valider qu'il est exécutable
+      2. Appliquer la règle métier Order.execute() → Trade
+      3. Débiter le wallet (BUY) ou créditer le wallet (SELL)
+      4. Mettre à jour la position WalletAsset
+      5. Enregistrer la transaction dans le ledger wallet
+      6. Persister atomiquement ordre + trade via OrderRepository
 
-    Les étapes 3-4 utilisent les repositories wallet directement (pas les use cases
-    CreditWalletUseCase/DebitWalletUseCase) pour rester dans une seule transaction DB.
+    Les étapes 3-5 accèdent aux repositories wallet directement
+    pour rester dans une seule transaction DB
     """
 
     def __init__(
@@ -114,14 +120,20 @@ class ExecuteTradeUseCase:
                 asset_symbol=_symbol_base(order.symbol),
             )
             if position is None:
-                from wallet.domain.entities import WalletAsset
-
                 position = WalletAsset(
                     wallet_id=order.wallet_id,
                     asset_symbol=_symbol_base(order.symbol),
                 )
             position.add(quantity)
             self.wallet_asset_repo.save(position)
+
+            # Enregistrement dans le ledger : le wallet est l'expéditeur (fonds sortants)
+            tx = Transaction(
+                amount=trade_cost,
+                type=TransactionType.TRADE_BUY,
+                sender_id=order.wallet_id,
+                reference_id=trade.id,
+            )
 
         else:  # SELL
             # Débit de la position de l'actif
@@ -130,8 +142,6 @@ class ExecuteTradeUseCase:
                 asset_symbol=_symbol_base(order.symbol),
             )
             if position is None:
-                from wallet.domain.exceptions import InsufficientBalanceError
-
                 raise InsufficientBalanceError(
                     f"Aucune position {_symbol_base(order.symbol)} à vendre."
                 )
@@ -142,17 +152,32 @@ class ExecuteTradeUseCase:
             wallet.credit(trade_cost)
             self.wallet_repo.save(wallet)
 
+            # Enregistrement dans le ledger : le wallet est le destinataire (fonds entrants)
+            tx = Transaction(
+                amount=trade_cost,
+                type=TransactionType.TRADE_SELL,
+                recipient_id=order.wallet_id,
+                reference_id=trade.id,
+            )
+
+        tx.mark_completed()
+        self.transaction_repo.save(tx)
+
         # 4. Persistance atomique ordre + trade
         return self.order_repository.save_order_with_trade(order, trade)
 
 
 def _symbol_base(symbol: str) -> str:
-    """Extrait la devise de base du symbole. ex: BTC/USD -> BTC"""
+    """Extrait la devise de base du symbole - ex : BTC/USD → BTC"""
     return symbol.split("/")[0].upper()
 
 
 class ListOrdersUseCase:
-    """Use case pour lister les ordres avec pagination."""
+    """
+    Cas d'usage : lister les ordres d'un portefeuille avec pagination
+
+    Filtrés par wallet_id si fourni, retournés du plus récent au plus ancien
+    """
 
     def __init__(self, order_repository: OrderRepository | None = None):
         self.order_repository = order_repository or OrderRepository()
@@ -170,7 +195,11 @@ class ListOrdersUseCase:
 
 
 class ListTransactionsUseCase:
-    """Use case pour lister les transactions avec pagination."""
+    """
+    Cas d'usage : lister les trades exécutés d'un portefeuille avec pagination
+
+    Filtrés par wallet_id si fourni, retournés du plus récent au plus ancien
+    """
 
     def __init__(self, order_repository: OrderRepository | None = None):
         self.order_repository = order_repository or OrderRepository()

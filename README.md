@@ -44,6 +44,24 @@ Flux de prix en temps réel via Redis Pub/Sub et Django Channels (voir [ADR-004]
 { "type": "subscribe", "symbols": ["ETH", "SOL"] }
 ```
 Pipeline interne : `POST /api/market/assets/{symbol}/price` -> `UpdatePriceUseCase` -> `RedisMarketPublisher` -> `PriceConsumer` -> Client
+### Phase 9 - GraphQL (Terminée)
+Dashboard agrégé via GraphQL avec Strawberry + strawberry-graphql-django (voir [ADR-005](docs/adr/ADR-005-graphql-strawberry.md)).
+**Endpoint** : `POST /graphql/` (GraphiQL via GET), authentifié par `Authorization: Bearer <jwt>`.
+**Schéma** :
+```graphql
+type Query {
+  me: User!
+  dashboard: Wallet!
+}
+```
+```graphql
+query Dashboard {
+  dashboard { balance assets { symbol quantity value } }
+}
+```
+**Anti N+1** : le champ `value` de chaque position est résolu via un DataLoader
+(une seule requête `WHERE symbol IN (...)` pour tous les actifs détenus, quel que
+soit le nombre de positions, verrouillé par test à 4 requêtes SQL par dashboard).
 ## Installation
 ```bash
 # Environment virtuelle
@@ -73,4 +91,5 @@ pytest
 - ADR-001 - Clean Architecture pragmatique
 - ADR-002 - Monolithe modulaire
 - ADR-003 - API REST avec Django Ninja
-- ADR-004 - WebSocket avec Django Channels
+- ADR-004 - WebSocket avec Django Channels (`docs/adr/ADR-004-websocket-django-channels-redis.md`)
+- ADR-005 - GraphQL avec Strawberry

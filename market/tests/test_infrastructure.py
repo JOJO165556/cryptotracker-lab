@@ -86,3 +86,30 @@ def test_asset_repository_list_active_only():
 
     assert len(assets) == 1
     assert assets[0].symbol == "BTC"
+
+
+@pytest.mark.django_db
+def test_asset_repository_list_by_symbols():
+    """Test du chargement groupé d'actifs par symboles (anti N+1)"""
+    repo = AssetRepository()
+    repo.save(Asset(symbol="BTC", name="Bitcoin"))
+    repo.save(Asset(symbol="ETH", name="Ethereum"))
+    repo.save(Asset(symbol="SOL", name="Solana"))
+
+    assets = repo.list_by_symbols(["BTC", "SOL", "ETH"])
+
+    assert {a.symbol for a in assets} == {"BTC", "SOL", "ETH"}
+
+
+@pytest.mark.django_db
+def test_asset_repository_list_by_symbols_ignores_inactive_and_unknown():
+    """Test que list_by_symbols ignore les actifs inactifs et inconnus"""
+    repo = AssetRepository()
+    inactive = Asset(symbol="ETH", name="Ethereum")
+    inactive.deactivate()
+    repo.save(Asset(symbol="BTC", name="Bitcoin"))
+    repo.save(inactive)
+
+    assets = repo.list_by_symbols(["BTC", "ETH", "DOGE"])
+
+    assert [a.symbol for a in assets] == ["BTC"]

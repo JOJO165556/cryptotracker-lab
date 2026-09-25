@@ -28,6 +28,18 @@ class AssetRepository:
         models = AssetModel.objects.filter(is_active=True)
         return [self._to_domain(model) for model in models]
 
+    def list_by_symbols(self, symbols: list[str]) -> list[Asset]:
+        """
+        Charge les actifs actifs correspondant à une liste de symboles
+
+        Exécute une seule requête SQL (WHERE symbol IN (...)) pour tout un
+        lot de symboles, utilisé par le DataLoader GraphQL pour éviter le N+1.
+        """
+        if not symbols:
+            return []
+        models = AssetModel.objects.filter(symbol__in=symbols, is_active=True)
+        return [self._to_domain(model) for model in models]
+
     def save(self, asset: Asset) -> Asset:
         """Sauvegarde ou met à jour un actif en base de données"""
         model, _ = AssetModel.objects.update_or_create(

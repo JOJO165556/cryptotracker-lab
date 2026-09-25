@@ -96,7 +96,7 @@ async def test_consumer_subscribe_ignores_already_subscribed():
         await asyncio.sleep(0.05)
         call_count_after_connect = pubsub_mock.subscribe.call_count
 
-        # BTC est déjà souscrit -- pas de redémarrage attendu
+        # BTC est déjà souscrit - pas de redémarrage attendu
         await communicator.send_json_to({"type": "subscribe", "symbols": ["BTC"]})
         await asyncio.sleep(0.05)
 
