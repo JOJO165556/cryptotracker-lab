@@ -90,6 +90,7 @@ class TransactionRepository:
                 "status": transaction_entity.status,
                 "idempotency_key": transaction_entity.idempotency_key,
                 "failure_reason": transaction_entity.failure_reason,
+                "reference_id": transaction_entity.reference_id,
             },
         )
         return self._to_domain(model)
@@ -131,6 +132,7 @@ class TransactionRepository:
             status=model.status,
             idempotency_key=model.idempotency_key,
             failure_reason=model.failure_reason,
+            reference_id=model.reference_id,
             created_at=model.created_at,
         )
 

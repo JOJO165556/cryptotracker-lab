@@ -13,6 +13,8 @@ class TransactionType(str, Enum):
     DEPOSIT = "DEPOSIT"
     WITHDRAWAL = "WITHDRAWAL"
     TRANSFER = "TRANSFER"
+    TRADE_BUY = "TRADE_BUY"   # achat d'actif via un ordre
+    TRADE_SELL = "TRADE_SELL"  # vente d'actif via un ordre
 
 
 class TransactionStatus(str, Enum):
@@ -29,7 +31,9 @@ class Transaction:
     Entité représentant un mouvement financier immuable (Ledger / Audit Log)
 
     Elle permet de conserver la trace de l'expéditeur, du destinataire,
-    du statut d'exécution et de la clé d'idempotence associée
+    du statut d'exécution et de la clé d'idempotence associée.
+    reference_id permet la traçabilité inverse vers l'entité source
+    (ex : UUID du Trade qui a déclenché la transaction)
     """
 
     amount: Decimal
@@ -40,6 +44,7 @@ class Transaction:
     status: TransactionStatus = TransactionStatus.PENDING
     idempotency_key: str | None = None
     failure_reason: str | None = None
+    reference_id: UUID | None = None  # UUID de l'entité source (Trade, Order...)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __post_init__(self) -> None:
