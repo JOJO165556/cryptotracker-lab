@@ -41,6 +41,7 @@ class OrderResponseSchema(Schema):
     filled_quantity: Decimal
     price: Optional[Decimal] = None
     idempotency_key: Optional[str] = None
+    created_at: Optional[str] = None
 
 
 class TradeResponseSchema(Schema):

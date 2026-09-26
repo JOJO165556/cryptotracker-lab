@@ -17,6 +17,10 @@ redis==8.1.0
 strawberry-graphql==0.327.7
 strawberry-graphql-django==0.89.2
 
+# gRPC
+grpcio==1.69.0
+grpcio-tools==1.69.0
+
 # Validation & Modèles DTO
 pydantic==2.13.5
 email-validator==2.3.0
