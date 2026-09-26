@@ -3,6 +3,7 @@ from uuid import UUID
 
 from ninja import Header, Router
 from ninja.errors import HttpError
+from ninja.responses import Response
 
 from identity.infrastructure.auth import auth_jwt
 from trading.application.use_cases import (
@@ -63,11 +64,21 @@ def create_order(
     except TradingDomainException as e:
         raise HttpError(400, str(e))
 
-    # Idempotency replay → 200, nouvelle création → 201
-    status = (
-        200 if idempotency_key and order.idempotency_key == idempotency_key else 201
+    # Idempotency replay → HTTP 200, nouvelle création → HTTP 201
+    # Django Ninja gère automatiquement le code de statut selon le type de retour
+    return OrderResponseSchema(
+        id=order.id,
+        wallet_id=order.wallet_id,
+        symbol=order.symbol,
+        side=order.side,
+        type=order.type,
+        status=order.status,
+        quantity=order.quantity,
+        filled_quantity=order.filled_quantity,
+        price=order.price,
+        idempotency_key=order.idempotency_key,
+        created_at=order.created_at.isoformat() if order.created_at else None,
     )
-    return status, order
 
 
 @router.post("/orders/{order_id}/execute/", response=TradeResponseSchema)
