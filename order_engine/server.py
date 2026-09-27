@@ -9,7 +9,10 @@ from order_engine.proto.order_pb2 import (
     ListOrdersResponse,
     Order,
 )
-from order_engine.proto.order_pb2_grpc import OrderServiceServicer, add_OrderServiceServicer_to_server
+from order_engine.proto.order_pb2_grpc import (
+    OrderServiceServicer,
+    add_OrderServiceServicer_to_server,
+)
 from trading.application.use_cases import CreateOrderUseCase, ExecuteTradeUseCase
 from trading.domain.value_objects import OrderSide, OrderType
 from trading.infrastructure.repositories import OrderRepository
@@ -28,7 +31,9 @@ class OrderEngine(OrderServiceServicer):
         self.wallet_repo = WalletRepository()
         self.wallet_asset_repo = WalletAssetRepository()
         self.transaction_repo = TransactionRepository()
-        self.create_order_use_case = CreateOrderUseCase(order_repository=self.order_repo)
+        self.create_order_use_case = CreateOrderUseCase(
+            order_repository=self.order_repo
+        )
         self.execute_trade_use_case = ExecuteTradeUseCase(
             order_repository=self.order_repo,
             wallet_repo=self.wallet_repo,
@@ -129,7 +134,7 @@ class OrderEngine(OrderServiceServicer):
             offset = request.offset or 0
             page = (offset // limit) + 1 if limit > 0 else 1
             page_size = limit
-            
+
             orders, total = self.order_repo.list_paginated(
                 page=page,
                 page_size=page_size,

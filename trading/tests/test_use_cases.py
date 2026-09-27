@@ -85,3 +85,34 @@ def test_execute_trade_use_case_success(wallet):
 
     assert updated_order.status == OrderStatus.FILLED
     assert trade.price == Decimal("45000.00")
+
+
+@pytest.mark.django_db
+def test_execute_trade_use_case_rejects_other_wallet(wallet):
+    """Un ordre d'un autre wallet ne peut pas être exécuté (anti-IDOR)"""
+    import uuid
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    other_user = User.objects.create(username=f"other_{uuid.uuid4()}")
+    other_wallet = WalletModel.objects.create(
+        user=other_user, balance=Decimal("100000.00"), currency="USD"
+    )
+
+    create_uc = CreateOrderUseCase()
+    order = create_uc.execute(
+        wallet_id=wallet.id,
+        symbol="BTC/USD",
+        side=OrderSide.BUY,
+        type=OrderType.MARKET,
+        quantity=Decimal("2.0"),
+    )
+
+    execute_uc = ExecuteTradeUseCase()
+    with pytest.raises(ValueError):
+        execute_uc.execute(
+            order_id=order.id,
+            execution_price=Decimal("45000.00"),
+            quantity=Decimal("2.0"),
+            caller_wallet_id=other_wallet.id,
+        )

@@ -60,20 +60,41 @@ def test_delete_price_alert_use_case(user):
         direction=AlertDirection.ABOVE,
     )
 
-    deleted = delete_use_case.execute(alert.id)
+    deleted = delete_use_case.execute(alert.id, user.id)
 
     assert deleted is True
     assert repo.get_by_id(alert.id) is None
 
 
 @pytest.mark.django_db
-def test_delete_price_alert_use_case_not_found():
+def test_delete_price_alert_use_case_not_found(user):
     """Test que la suppression échoue pour une alerte inexistante"""
     repo = PriceAlertRepository()
     use_case = DeletePriceAlertUseCase(alert_repo=repo)
 
     with pytest.raises(AlertNotFoundException):
-        use_case.execute(uuid4())
+        use_case.execute(uuid4(), user.id)
+
+
+@pytest.mark.django_db
+def test_delete_price_alert_of_other_user_rejected(user):
+    """Test qu'une alerte d'un autre utilisateur ne peut pas être supprimée"""
+    other = User.objects.create(username="other", email="other@example.com")
+    repo = PriceAlertRepository()
+    create_use_case = CreatePriceAlertUseCase(alert_repo=repo)
+    delete_use_case = DeletePriceAlertUseCase(alert_repo=repo)
+
+    alert = create_use_case.execute(
+        user_id=other.id,
+        asset_symbol="BTC",
+        target_price=Decimal("50000.00"),
+        direction=AlertDirection.ABOVE,
+    )
+
+    with pytest.raises(AlertNotFoundException):
+        delete_use_case.execute(alert.id, user.id)
+
+    assert repo.get_by_id(alert.id) is not None
 
 
 @pytest.mark.django_db
@@ -156,17 +177,37 @@ def test_mark_notification_as_read_use_case(user):
         payload={"message": "Alert"},
     )
 
-    updated = mark_use_case.execute(notification.id)
+    updated = mark_use_case.execute(notification.id, user.id)
 
     assert updated.status.value == "READ"
     assert updated.read_at is not None
 
 
 @pytest.mark.django_db
-def test_mark_notification_as_read_use_case_not_found():
+def test_mark_notification_as_read_use_case_not_found(user):
     """Test que le marquage échoue pour une notification inexistante"""
     repo = NotificationRepository()
     use_case = MarkNotificationAsReadUseCase(notification_repo=repo)
 
     with pytest.raises(AlertNotFoundException):
-        use_case.execute(uuid4())
+        use_case.execute(uuid4(), user.id)
+
+
+@pytest.mark.django_db
+def test_mark_notification_as_read_of_other_user_rejected(user):
+    """Test qu'une notification d'un autre utilisateur ne peut pas être marquée lue"""
+    other = User.objects.create(username="other", email="other@example.com")
+    repo = NotificationRepository()
+    create_use_case = CreateNotificationUseCase(notification_repo=repo)
+    mark_use_case = MarkNotificationAsReadUseCase(notification_repo=repo)
+
+    notification = create_use_case.execute(
+        user_id=other.id,
+        type=NotificationType.ALERT,
+        payload={"message": "Alert"},
+    )
+
+    with pytest.raises(AlertNotFoundException):
+        mark_use_case.execute(notification.id, user.id)
+
+    assert repo.get_by_id(notification.id).status.value != "READ"

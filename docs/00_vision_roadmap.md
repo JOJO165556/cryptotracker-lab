@@ -88,13 +88,3 @@ Une phase se termine (code + test + ADR si décision structurante) avant de pass
 3. Le domaine métier (règles, entités) ne dépend jamais d'un framework.
 4. On mesure avant de dire qu'un choix est "meilleur" (latence, charge, complexité).
 5. Si une phase prend trop d'ampleur, on la découpe — on ne saute pas la suivante en attendant.
-
-## 7. Comment utiliser ce document avec moi
-
-Quand tu es prêt à avancer, dis simplement :
-> "On attaque la phase [X] de CryptoTracker."
-
-Je reviens alors à la feuille de route ci-dessus pour te guider depuis le besoin
-jusqu'à l'implémentation, sans qu'on ait à retout re-décider depuis zéro à chaque fois.
-
-**Prochaine étape suggérée** : Phase 0 — rédiger `01_project_definition.md`.

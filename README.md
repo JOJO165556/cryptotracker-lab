@@ -62,6 +62,27 @@ query Dashboard {
 **Anti N+1** : le champ `value` de chaque position est résolu via un DataLoader
 (une seule requête `WHERE symbol IN (...)` pour tous les actifs détenus, quel que
 soit le nombre de positions, verrouillé par test à 4 requêtes SQL par dashboard).
+### Phase 10 - gRPC (Terminée)
+Service Order Engine en gRPC, branché sur l'event loop ASGI via `grpcio.aio`, sans FastAPI (voir [ADR-006](docs/adr/ADR-006-grpc-asyncio-order-engine.md)).
+**Contrat** : `order_engine/proto/order.proto` (service `OrderService`)
+- `CreateOrder` - Créer un ordre (wallet, actif, côté, quantité, prix, idempotence)
+- `ExecuteOrder` - Exécuter un ordre (prix, quantité exécutée)
+- `GetOrder` - Détail d'un ordre par id
+- `ListOrders` - Historique des ordres d'un wallet
+Le serveur réutilise les cas d'usage du monolithe (`CreateOrderUseCase`, `ExecuteTradeUseCase`), sans dupliquer la logique métier.
+### Phase 11 - JSON-RPC (Terminée)
+Service Analytics en JSON-RPC v2 sur le monolithe Django, sans framework externe (voir [ADR-007](docs/adr/ADR-007-json-rpc-analytics.md)).
+**Endpoint** : `POST /api/analytics/rpc` (authentifié par JWT)
+- `get_portfolio_value` - Valeur du portefeuille de l'utilisateur connecté
+- `get_trading_volume` - Volume de trading sur les N derniers jours
+- `get_order_statistics` - Statistiques des ordres de l'utilisateur connecté
+- `get_market_summary` - Résumé du marché
+Conformité JSON-RPC v2 (identifiants, codes d'erreur -32601, -32602, -32603). Le wallet est toujours déduit du JWT, un `wallet_id` étranger est refusé.
+## Durcissement sécurité
+Passé sur l'ensemble des interfaces déjà livrées :
+- **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
+- **GraphQL** : conversion du claim JWT `user_id` conditionnée au type réel du PK (`UUIDField` ou `AutoField`)
+- **Câblage URLs** : chaque interface est couverte par un test passant par les vraies routes du projet (`urls.py`), pas seulement le router isolé
 ## Installation
 ```bash
 # Environment virtuelle
@@ -93,3 +114,5 @@ pytest
 - ADR-003 - API REST avec Django Ninja
 - ADR-004 - WebSocket avec Django Channels (`docs/adr/ADR-004-websocket-django-channels-redis.md`)
 - ADR-005 - GraphQL avec Strawberry
+- ADR-006 - gRPC asynchrone avec grpcio.aio (Order Engine)
+- ADR-007 - JSON-RPC pour le service Analytics

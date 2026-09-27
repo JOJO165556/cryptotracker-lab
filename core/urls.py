@@ -7,6 +7,7 @@ from wallet.interfaces.api import router as wallet_router
 from trading.interfaces.api import router as trading_router
 from market.interfaces.api import router as market_router
 from notification.interfaces.api import router as notification_router
+from analytics.interfaces.api import router as analytics_router
 
 from core.graphql_api.context import CryptoTrackerGraphQLView
 from core.graphql_api.schema import schema
@@ -19,6 +20,7 @@ api.add_router("/wallets/", wallet_router)
 api.add_router("/trading/", trading_router)
 api.add_router("/market/", market_router)
 api.add_router("/notifications/", notification_router)
+api.add_router("/analytics/", analytics_router)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

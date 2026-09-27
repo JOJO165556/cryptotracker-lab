@@ -13,6 +13,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 # (ils importent des modèles Django au niveau module)
 django_asgi_app = get_asgi_application()
 
+
 # Démarrage du serveur gRPC dans un thread séparé
 def start_grpc_server():
     import grpc
@@ -26,6 +27,7 @@ def start_grpc_server():
     server.start()
     print("gRPC server started on port 50051")
     server.wait_for_termination()
+
 
 grpc_thread = threading.Thread(target=start_grpc_server, daemon=True)
 grpc_thread.start()

@@ -97,18 +97,37 @@ def test_price_alert_repository_delete(user):
     )
     saved = repo.save(alert)
 
-    deleted = repo.delete(saved.id)
+    deleted = repo.delete(saved.id, user.id)
 
     assert deleted is True
     assert repo.get_by_id(saved.id) is None
 
 
 @pytest.mark.django_db
-def test_price_alert_repository_delete_not_found():
+def test_price_alert_repository_delete_not_found(user):
     """Test de suppression d'une alerte inexistante"""
     repo = PriceAlertRepository()
-    deleted = repo.delete(uuid4())
+    deleted = repo.delete(uuid4(), user.id)
     assert deleted is False
+
+
+@pytest.mark.django_db
+def test_price_alert_repository_delete_wrong_user(user):
+    """Test qu'une alerte d'un autre utilisateur ne peut pas être supprimée"""
+    other = User.objects.create(username="other", email="other@example.com")
+    repo = PriceAlertRepository()
+    alert = PriceAlert(
+        user_id=UUID(int=user.id),
+        asset_symbol="BTC",
+        target_price=Decimal("50000.00"),
+        direction=AlertDirection.ABOVE,
+    )
+    saved = repo.save(alert)
+
+    deleted = repo.delete(saved.id, other.id)
+
+    assert deleted is False
+    assert repo.get_by_id(saved.id) is not None
 
 
 @pytest.mark.django_db

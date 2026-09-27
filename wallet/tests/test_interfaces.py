@@ -53,6 +53,20 @@ def test_get_my_wallet_success(api_client, auth_user):
 
 
 @pytest.mark.django_db
+def test_get_my_wallet_real_url_wiring(auth_user):
+    """Couvre le câblage réel du router wallet dans urls.py (GET /api/wallets/me)"""
+    from django.test import Client
+
+    _, token = auth_user
+    response = Client().get(
+        "/api/wallets/me",
+        HTTP_AUTHORIZATION=f"Bearer {token}",
+    )
+    assert response.status_code == 200
+    assert Decimal(str(response.json()["balance"])) == Decimal("100.00")
+
+
+@pytest.mark.django_db
 def test_deposit_success(api_client, auth_user):
     _, token = auth_user
     response = api_client.post(

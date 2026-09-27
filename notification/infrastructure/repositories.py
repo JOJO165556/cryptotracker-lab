@@ -45,9 +45,10 @@ class PriceAlertRepository:
         )
         return self._to_domain(model)
 
-    def delete(self, alert_id: UUID) -> bool:
+    def delete(self, alert_id: UUID, user_id) -> bool:
+        user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
         try:
-            model = PriceAlertModel.objects.get(id=alert_id)
+            model = PriceAlertModel.objects.get(id=alert_id, user_id=user_id_int)
             model.delete()
             return True
         except PriceAlertModel.DoesNotExist:
@@ -72,6 +73,16 @@ class NotificationRepository:
     def get_by_id(self, notification_id: UUID) -> Notification | None:
         try:
             model = NotificationModel.objects.get(id=notification_id)
+            return self._to_domain(model)
+        except NotificationModel.DoesNotExist:
+            return None
+
+    def get_by_id_and_user(self, notification_id: UUID, user_id) -> Notification | None:
+        user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
+        try:
+            model = NotificationModel.objects.get(
+                id=notification_id, user_id=user_id_int
+            )
             return self._to_domain(model)
         except NotificationModel.DoesNotExist:
             return None
