@@ -50,7 +50,7 @@ def delete_alert(request, alert_id: UUID):
     """
     use_case = DeletePriceAlertUseCase()
     try:
-        use_case.execute(alert_id)
+        use_case.execute(alert_id, user_id=request.user.id)
         return {"success": True}
     except AlertNotFoundException as e:
         raise HttpError(404, str(e))
@@ -91,6 +91,6 @@ def mark_notification_as_read(request, notification_id: UUID):
     """
     use_case = MarkNotificationAsReadUseCase()
     try:
-        return use_case.execute(notification_id)
+        return use_case.execute(notification_id, user_id=request.user.id)
     except AlertNotFoundException as e:
         raise HttpError(404, str(e))

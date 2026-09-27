@@ -44,13 +44,17 @@ class DeletePriceAlertUseCase:
 
     Permet à un utilisateur de supprimer une alerte
     qu'il ne souhaite plus recevoir
+
+    La suppression est limitée aux alertes de l'utilisateur :
+    une alerte appartenant à un autre utilisateur est traitée
+    comme introuvable (aucune fuite d'existence)
     """
 
     def __init__(self, alert_repo: PriceAlertRepository | None = None):
         self.alert_repo = alert_repo or PriceAlertRepository()
 
-    def execute(self, alert_id: UUID) -> bool:
-        deleted = self.alert_repo.delete(alert_id)
+    def execute(self, alert_id: UUID, user_id: UUID | int) -> bool:
+        deleted = self.alert_repo.delete(alert_id, user_id)
         if not deleted:
             raise AlertNotFoundException(f"Alerte {alert_id} introuvable")
         return True
@@ -118,13 +122,19 @@ class MarkNotificationAsReadUseCase:
 
     Permet à un utilisateur de marquer une notification
     spécifique comme lue
+
+    Le marquage est limité aux notifications de l'utilisateur :
+    une notification appartenant à un autre utilisateur est
+    traitée comme introuvable (aucune fuite d'existence)
     """
 
     def __init__(self, notification_repo: NotificationRepository | None = None):
         self.notification_repo = notification_repo or NotificationRepository()
 
-    def execute(self, notification_id: UUID) -> Notification:
-        notification = self.notification_repo.get_by_id(notification_id)
+    def execute(self, notification_id: UUID, user_id: UUID | int) -> Notification:
+        notification = self.notification_repo.get_by_id_and_user(
+            notification_id, user_id
+        )
         if not notification:
             raise AlertNotFoundException(f"Notification {notification_id} introuvable")
         notification.mark_as_read()

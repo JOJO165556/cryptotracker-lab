@@ -91,10 +91,18 @@ class ExecuteTradeUseCase:
         order_id: UUID,
         execution_price: Decimal,
         quantity: Decimal,
+        caller_wallet_id: UUID | None = None,
     ) -> tuple[Order, Trade]:
         # 1. Charger l'ordre
         order = self.order_repository.get_by_id(order_id)
         if not order:
+            raise ValueError(f"Ordre {order_id} introuvable.")
+
+        # 1bis. Contrôle d'appartenance : seul le propriétaire du wallet peut
+        # exécuter son ordre. L'accès REST passe caller_wallet_id (résolu depuis
+        # le JWT) ; le moteur gRPC (exécution serveur) n'en fournit pas et reste
+        # autorisé. L'existence d'un ordre étranger n'est pas divulguée.
+        if caller_wallet_id is not None and order.wallet_id != caller_wallet_id:
             raise ValueError(f"Ordre {order_id} introuvable.")
 
         # 2. Appliquer les règles d'exécution du domaine → produit un Trade

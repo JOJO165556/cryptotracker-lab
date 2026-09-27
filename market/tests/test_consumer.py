@@ -29,6 +29,7 @@ async def test_consumer_connect_and_disconnect():
         pubsub_mock.listen = MagicMock(side_effect=_async_iter)
         pubsub_mock.subscribe = AsyncMock()
         pubsub_mock.unsubscribe = AsyncMock()
+        pubsub_mock.get_message = MagicMock(side_effect=_async_iter)
         pubsub_mock.aclose = AsyncMock()
 
         redis_mock = AsyncMock()
@@ -53,6 +54,7 @@ async def test_consumer_subscribe_adds_symbols():
         pubsub_mock.listen = MagicMock(side_effect=_async_iter)
         pubsub_mock.subscribe = AsyncMock()
         pubsub_mock.unsubscribe = AsyncMock()
+        pubsub_mock.get_message = MagicMock(side_effect=_async_iter)
         pubsub_mock.aclose = AsyncMock()
 
         redis_mock = AsyncMock()
@@ -83,6 +85,7 @@ async def test_consumer_subscribe_ignores_already_subscribed():
         pubsub_mock.listen = MagicMock(side_effect=_async_iter)
         pubsub_mock.subscribe = AsyncMock()
         pubsub_mock.unsubscribe = AsyncMock()
+        pubsub_mock.get_message = MagicMock(side_effect=_async_iter)
         pubsub_mock.aclose = AsyncMock()
 
         redis_mock = AsyncMock()
@@ -113,6 +116,7 @@ async def test_consumer_invalid_json_returns_error():
         pubsub_mock.listen = MagicMock(side_effect=_async_iter)
         pubsub_mock.subscribe = AsyncMock()
         pubsub_mock.unsubscribe = AsyncMock()
+        pubsub_mock.get_message = MagicMock(side_effect=_async_iter)
         pubsub_mock.aclose = AsyncMock()
 
         redis_mock = AsyncMock()
@@ -140,6 +144,7 @@ async def test_consumer_close_message_disconnects():
         pubsub_mock.listen = MagicMock(side_effect=_async_iter)
         pubsub_mock.subscribe = AsyncMock()
         pubsub_mock.unsubscribe = AsyncMock()
+        pubsub_mock.get_message = MagicMock(side_effect=_async_iter)
         pubsub_mock.aclose = AsyncMock()
 
         redis_mock = AsyncMock()
@@ -157,4 +162,3 @@ async def test_consumer_close_message_disconnects():
         assert await communicator.receive_nothing(timeout=0.5) or True
 
         await communicator.disconnect()
-        

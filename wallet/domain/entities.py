@@ -13,7 +13,7 @@ class TransactionType(str, Enum):
     DEPOSIT = "DEPOSIT"
     WITHDRAWAL = "WITHDRAWAL"
     TRANSFER = "TRANSFER"
-    TRADE_BUY = "TRADE_BUY"   # achat d'actif via un ordre
+    TRADE_BUY = "TRADE_BUY"  # achat d'actif via un ordre
     TRADE_SELL = "TRADE_SELL"  # vente d'actif via un ordre
 
 

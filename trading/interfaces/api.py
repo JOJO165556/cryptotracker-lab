@@ -86,15 +86,19 @@ def execute_trade(request, order_id: UUID, payload: ExecuteTradeSchema):
     """
     Exécute un ordre (partiellement ou totalement).
 
+    Seuls les ordres du wallet de l'utilisateur connecté sont exécutables :
+    le wallet est déduit du JWT (jamais du client) et passé au cas d'usage.
     Débite le wallet de l'acheteur ou crédite celui du vendeur,
     et met à jour la position WalletAsset en conséquence.
     """
     use_case = ExecuteTradeUseCase()
+    wallet_id = _get_wallet_id(request)
     try:
         _, trade = use_case.execute(
             order_id=order_id,
             execution_price=payload.execution_price,
             quantity=payload.quantity,
+            caller_wallet_id=wallet_id,
         )
         return trade
     except TradingDomainException as e:
