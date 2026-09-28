@@ -44,6 +44,15 @@ Flux de prix en temps réel via Redis Pub/Sub et Django Channels (voir [ADR-004]
 { "type": "subscribe", "symbols": ["ETH", "SOL"] }
 ```
 Pipeline interne : `POST /api/market/assets/{symbol}/price` -> `UpdatePriceUseCase` -> `RedisMarketPublisher` -> `PriceConsumer` -> Client
+### Phase 8b - SSE (Terminée)
+Notifications en temps réel via Server-Sent Events, sans couche de canaux, alors que le flux est unidirectionnel (voir [ADR-008](docs/adr/ADR-008-sse-notifications.md)).
+**Connexion** : `GET /api/notifications/stream` (Bearer token)
+**Evenement recu** (alertes et transactions) :
+```
+event: notification
+data: {"type": "ALERT", "asset_symbol": "BTC", "message": "BTC a depasse 105000"}
+```
+Flux push du nouveau uniquement : l'historique reste servi par `GET /api/notifications/`. Un `: keepalive` maintient la connexion ouverte quand il n'y a rien a emettre. Source : table `Notification`, lue par poll (1s).
 ### Phase 9 - GraphQL (Terminée)
 Dashboard agrégé via GraphQL avec Strawberry + strawberry-graphql-django (voir [ADR-005](docs/adr/ADR-005-graphql-strawberry.md)).
 **Endpoint** : `POST /graphql/` (GraphiQL via GET), authentifié par `Authorization: Bearer <jwt>`.
@@ -116,3 +125,4 @@ pytest
 - ADR-005 - GraphQL avec Strawberry
 - ADR-006 - gRPC asynchrone avec grpcio.aio (Order Engine)
 - ADR-007 - JSON-RPC pour le service Analytics
+- ADR-008 - Server-Sent Events pour les notifications

@@ -63,6 +63,7 @@ Si tu ne peux pas remplir ces 7 cases pour une techno que tu veux ajouter
 | 6 — Socle | Repo, Django, Postgres, Docker, CI | Fondations propres |
 | 7 — REST | Premier module complet (Wallet) | HTTP, statelessness, sécurité API |
 | 8 — WebSocket | Flux de prix temps réel | Event-driven, Redis pub/sub |
+| 8b — SSE | Flux de notifications (alertes, transactions) | Push serveur→client unidirectionnel, contraste avec WebSocket |
 | 9 — GraphQL | Dashboard agrégé | Schema, resolvers, N+1 |
 | 10 — gRPC | Order Engine (service séparé) | RPC, contrats stricts, éventuellement FastAPI |
 | 11 — JSON-RPC | Service Analytics | Comparaison des paradigmes RPC |
