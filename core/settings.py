@@ -154,3 +154,22 @@ CHANNEL_LAYERS = {
 
 # URL Redis aussi utilisée par le MarketPublisher (market/infrastructure/publishers.py)
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+
+# Celery : file de tâches des webhooks (voir docs/adr/ADR-009-webhooks-inbound-async.md)
+# db 1 pour la file, db 2 pour les résultats, db 0 reste au channel layer.
+# Le broker partage Redis avec le reste du projet mais sur une base séparée,
+# un FLUSHALL de la file ne casserait donc pas les WebSocket du marché
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6380/1")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6380/2")
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TIMEZONE = "UTC"
+
+# En test les tâches sont exécutées dans le thread appelant : pas de worker à
+# lancer pour la suite, et le comportement reste vérifiable ligne à ligne
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_TASK_EAGER_PROPAGATES = env.bool("CELERY_TASK_EAGER_PROPAGATES", default=True)
+
+# Secret partagé avec le prestataire de paiement simulé, pour signer les webhooks
+PAYMENT_WEBHOOK_SECRET = env("PAYMENT_WEBHOOK_SECRET", default="dev-webhook-secret")
