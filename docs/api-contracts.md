@@ -127,13 +127,29 @@ Appelé en interne par Django (pas exposé publiquement). Timeout côté client 
 ## Webhooks
 
 **Entrant** — `POST /webhooks/payment`
+
+La route est hors du préfixe `/api` : elle est appelée par le prestataire, pas par un client de l'API.
+
 ```json
-Header: X-Signature: hmac_sha256(...)
+Header: X-Timestamp: 1759000000
+Header: X-Signature: hmac_sha256(secret, "<X-Timestamp>." + corps)
 { "provider_ref": "pay_123", "wallet_id": "uuid", "amount": "500.00", "status": "CONFIRMED" }
 ```
-Traitement : vérification HMAC → si `provider_ref` déjà vu → 200 sans retraiter (idempotence) → sinon Celery task async.
 
-**Sortant** (ex. notification externe) : retry avec backoff exponentiel (1s, 2s, 4s...), 5 tentatives max, puis dead-letter queue.
+La signature porte le timestamp, pas seulement le corps : c'est ce qui empêche de rejouer une capture. Tolérance de 5 minutes sur le timestamp.
+
+Réponses :
+| Code | Sens |
+|---|---|
+| 200 | message pris en charge, traitement lancé en file (`duplicate: true` si déjà vu) |
+| 400 | corps invalide, ou timestamp absent / hors tolérance (rejeu) |
+| 401 | signature invalide |
+
+Le 200 signifie « message reçu », pas « argent crédité » : le crédit est fait par une tâche Celery dans un autre processus. Un `provider_ref` déjà connu reçoit un 200 mais ne réempile pas de tâche. Le webhook en double crédite une seule fois, garantie par la contrainte d'unicité sur `provider_ref` et par la clé d'idempotence `payment:<provider_ref>` dans le ledger.
+
+Voir [ADR-009](adr/ADR-009-webhooks-inbound-async.md).
+
+**Sortant** (ex. notification externe) : prévu en phase 17, avec retry en backoff exponentiel (1s, 2s, 4s...), 5 tentatives max, puis dead-letter queue.
 
 ## SOAP — LegacyBank (simulation, squelette)
 

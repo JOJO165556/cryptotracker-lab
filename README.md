@@ -87,11 +87,22 @@ Service Analytics en JSON-RPC v2 sur le monolithe Django, sans framework externe
 - `get_order_statistics` - Statistiques des ordres de l'utilisateur connecté
 - `get_market_summary` - Résumé du marché
 Conformité JSON-RPC v2 (identifiants, codes d'erreur -32601, -32602, -32603). Le wallet est toujours déduit du JWT, un `wallet_id` étranger est refusé.
+### Phase 12 - Webhooks (Terminée)
+Webhook de paiement entrant, signé en HMAC-SHA256 et traité en asynchrone par Celery (voir [ADR-009](docs/adr/ADR-009-webhooks-inbound-async.md)).
+**Endpoint** : `POST /webhooks/payment` (hors `/api`, authentifié par signature)
+```json
+{ "provider_ref": "pay_123", "wallet_id": "uuid", "amount": "500.00", "status": "CONFIRMED" }
+```
+La vue vérifie la signature (le timestamp signé bloque le rejeu, tolérance 5 min), enregistre le paiement, empile la tâche et répond 200.
+L'idempotence tient à trois niveaux : unicité de `provider_ref`, compare-and-set sur le statut, et clé `payment:<provider_ref>` dans le ledger. Un webhook redélivré crédite une seule fois.
+Le traitement asynchrone demande un worker : `celery -A core worker` (file Redis, bases 1 et 2).
+Un webhook seul ne prouve rien, d'où `scripts/simulate_payment_provider.py` qui joue 7 scénarios (valide, échec, doublon, mauvaise signature, montant altéré, rejeu, en-têtes absents).
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
 - **GraphQL** : conversion du claim JWT `user_id` conditionnée au type réel du PK (`UUIDField` ou `AutoField`)
 - **Câblage URLs** : chaque interface est couverte par un test passant par les vraies routes du projet (`urls.py`), pas seulement le router isolé
+- **Webhook** : HMAC-SHA256 sur le timestamp signé et le corps, comparaison en temps constant, rejeu bloqué par la tolérance de 5 min, et 4xx (jamais 5xx) pour que le prestataire n'insiste pas sur un message définitivement refusé
 ## Installation
 ```bash
 # Environment virtuelle
@@ -105,6 +116,10 @@ docker-compose up -d postgresql
 python manage.py migrate
 # Serveur de développement (ASGI via Daphne - HTTP + WebSocket)
 python manage.py runserver
+
+# Worker Celery, dans un deuxième terminal, requis par la phase 12 (webhooks)
+# Sans lui, les webhooks sont bien reçus et accusés, mais aucun paiement n'est crédité
+celery -A core worker
 ```
 ## Tests
 ```bash
@@ -126,3 +141,4 @@ pytest
 - ADR-006 - gRPC asynchrone avec grpcio.aio (Order Engine)
 - ADR-007 - JSON-RPC pour le service Analytics
 - ADR-008 - Server-Sent Events pour les notifications
+- ADR-009 - Webhook de paiement entrant traité en Celery (`docs/adr/ADR-009-webhooks-inbound-async.md`)
