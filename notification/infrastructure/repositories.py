@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from django.db.models import Q
+
 from notification.domain.entities import Notification, PriceAlert
 from notification.domain.value_objects import (
     AlertDirection,
@@ -96,6 +98,50 @@ class NotificationRepository:
         user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
         models = NotificationModel.objects.filter(user_id=user_id_int, status="UNREAD")
         return [self._to_domain(model) for model in models]
+
+    def get_latest_id(self, user_id: UUID | int) -> UUID | None:
+        """Retourne l'id de la notification la plus récente de l'utilisateur, None s'il n'y en a aucune
+
+        Le flux SSE s'en sert pour démarrer à l'instant présent : un client qui se
+        connecte ne doit pas recevoir en push l'historique, déjà disponible via l'API REST
+        """
+        user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
+        return (
+            NotificationModel.objects.filter(user_id=user_id_int)
+            .order_by("-created_at", "-id")
+            .values_list("id", flat=True)
+            .first()
+        )
+
+    def list_after_id(
+        self, user_id: UUID | int, last_id: UUID | None
+    ) -> list[Notification]:
+        """Liste les notifications de l'utilisateur créées après last_id, de la plus ancienne à la plus récente
+
+        Utilisé par le flux SSE pour n'émettre que les notifications nouvelles depuis
+        le dernier envoi, sans doublon. Filtrer par user_id évite qu'un client ne
+        reçoive les notifications d'un autre utilisateur.
+
+        created_at n'est pas unique au niveau de la microseconde, deux notifications
+        peuvent donc partager le même timestamp : on départage sur l'id pour ne pas
+        en sauter une
+        """
+        user_id_int = user_id.int if isinstance(user_id, UUID) else user_id
+        queryset = NotificationModel.objects.filter(user_id=user_id_int)
+        if last_id is not None:
+            last = (
+                NotificationModel.objects.filter(id=last_id)
+                .values("created_at")
+                .first()
+            )
+            if last is not None:
+                queryset = queryset.filter(
+                    Q(created_at__gt=last["created_at"])
+                    | Q(created_at=last["created_at"], id__gt=last_id)
+                )
+        return [
+            self._to_domain(model) for model in queryset.order_by("created_at", "id")
+        ]
 
     def save(self, notification: Notification) -> Notification:
         from django.contrib.auth import get_user_model

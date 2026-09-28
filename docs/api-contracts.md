@@ -69,6 +69,23 @@ Handshake : Sec-WebSocket-Protocol: v1
 
 Pipeline interne : Market Provider → Market Service → Redis Pub/Sub → WebSocket Gateway → Client.
 
+## SSE : Notifications (flux serveur vers client uniquement)
+
+```
+GET /api/v1/notifications/stream   (auth requise, Bearer token)
+Content-Type: text/event-stream
+
+event: notification
+data: {"type": "ALERT", "asset_symbol": "BTC", "message": "BTC a dépassé 105000"}
+
+event: notification
+data: {"type": "TRANSACTION", "order_id": "uuid", "message": "Achat exécuté"}
+```
+
+Contrairement au marché (WebSocket, bidirectionnel : le client souscrit et se désouscrit), les notifications sont un flux à sens unique : SSE suffit, plus simple qu'un WebSocket (HTTP standard, reconnexion automatique native côté navigateur).
+
+Le flux est un push du nouveau uniquement : à la connexion, il démarre à l'instant présent et ne rejoue pas les notifications déjà existantes, que `GET /api/v1/notifications/` sert. Un commentaire `: keepalive` est envoyé quand il n'y a rien à émettre, pour maintenir la connexion ouverte à travers les proxys.
+
 ## GraphQL
 
 ```graphql
