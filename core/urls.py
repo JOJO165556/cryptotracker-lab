@@ -10,6 +10,7 @@ from notification.interfaces.api import router as notification_router
 from analytics.interfaces.api import router as analytics_router
 from notification.interfaces.sse import notification_stream
 from payment.interfaces.views import payment_webhook
+from legacy_bank.interfaces.soap_service import soap_endpoint
 
 from core.graphql_api.context import CryptoTrackerGraphQLView
 from core.graphql_api.schema import schema
@@ -32,4 +33,6 @@ urlpatterns = [
     # Le webhook est appelé par le prestataire de
     # paiement, pas par un client de l'API
     path("webhooks/payment", payment_webhook),
+    # Service SOAP LegacyBank (Phase 13)
+    path("legacybank/soap/", csrf_exempt(soap_endpoint)),
 ]
