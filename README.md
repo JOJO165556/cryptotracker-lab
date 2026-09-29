@@ -97,6 +97,16 @@ La vue vérifie la signature (le timestamp signé bloque le rejeu, tolérance 5 
 L'idempotence tient à trois niveaux : unicité de `provider_ref`, compare-and-set sur le statut, et clé `payment:<provider_ref>` dans le ledger. Un webhook redélivré crédite une seule fois.
 Le traitement asynchrone demande un worker : `celery -A core worker` (file Redis, bases 1 et 2).
 Un webhook seul ne prouve rien, d'où `scripts/simulate_payment_provider.py` qui joue 7 scénarios (valide, échec, doublon, mauvaise signature, montant altéré, rejeu, en-têtes absents).
+### Phase 13 - SOAP (Terminée)
+Service SOAP simulant une banque legacy, implémentation manuelle avec XML (voir [ADR-010](docs/adr/ADR-010-soap-legacy-bank.md)).
+**Endpoint** : `POST /legacybank/soap/` (WSDL disponible sur `/legacybank/soap/?wsdl`)
+- `CreateAccount` - Créer un compte bancaire
+- `GetAccount` - Récupérer les informations d'un compte
+- `Deposit` - Effectuer un dépôt
+- `Withdraw` - Effectuer un retrait
+- `Transfer` - Effectuer un virement entre comptes
+- `CheckBalance` - Vérifier le solde d'un compte
+L'implémentation manuelle montre la structure SOAP (enveloppe, body, fault) sans dépendance externe problématique. L'application business logic est séparée dans `LegacyBankService`.
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
