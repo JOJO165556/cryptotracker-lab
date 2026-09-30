@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTracker - Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>CryptoTracker</h1>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="dashboard">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect x="3" y="3" width="4" height="4" rx="1" />
+                        <rect x="13" y="3" width="4" height="4" rx="1" />
+                        <rect x="3" y="13" width="4" height="4" rx="1" />
+                        <rect x="13" y="13" width="4" height="4" rx="1" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-section="trading">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M3 7l6-3 6 3M3 7v9l6 3 6-3V7M3 7l6 3M9 10v9M15 7l-6 3" />
+                    </svg>
+                    <span>Trading</span>
+                </a>
+                <a href="#" class="nav-item" data-section="market">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M3 17V13a2 2 0 012-2h10a2 2 0 012 2v4" />
+                        <path d="M4 11V7a2 2 0 012-2h8a2 2 0 012 2v4" />
+                        <path d="M5 5V3a2 2 0 012-2h6a2 2 0 012 2v2" />
+                    </svg>
+                    <span>Marché</span>
+                </a>
+                <a href="#" class="nav-item" data-section="wallet">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect x="2" y="5" width="16" height="10" rx="2" />
+                        <path d="M2 10h16" />
+                    </svg>
+                    <span>Portefeuille</span>
+                </a>
+                <a href="#" class="nav-item" data-section="alerts">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                    <span>Alertes</span>
+                </a>
+                <a href="#" class="nav-item" data-section="legacy">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <rect x="4" y="4" width="12" height="12" rx="2" />
+                        <path d="M9 9h6M9 13h6M9 9v4" />
+                    </svg>
+                    <span>Legacy Bank</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="user-avatar">?</div>
+                    <div>
+                        <div class="user-name" id="user-name">Non connecté</div>
+                        <a href="/login/" class="user-action">Se connecter</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="mobile-overlay" id="mobile-overlay"></div>
+
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 12h14M3 6h14M3 18h14" />
+                        </svg>
+                    </button>
+                    <h2 id="page-title">Dashboard</h2>
+                </div>
+                <div class="topbar-right">
+                    <div class="connection-status" id="connection-status">
+                        <span class="status-dot offline"></span>
+                        <span class="status-text">Déconnecté</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content">
+                <section id="section-dashboard" class="section active">
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Valeur du portefeuille</div>
+                            <div class="kpi-value" id="kpi-portfolio">--</div>
+                            <div class="kpi-change positive">+2.5%</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Volume 24h</div>
+                            <div class="kpi-value" id="kpi-volume">--</div>
+                            <div class="kpi-change negative">-1.2%</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Ordres actifs</div>
+                            <div class="kpi-value" id="kpi-orders">--</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Alertes actives</div>
+                            <div class="kpi-value" id="kpi-alerts">--</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <h3>Prix BTC en temps réel</h3>
+                            <div class="chart-placeholder" id="btc-chart">
+                                <div class="price-display">
+                                    <span class="price-value" id="btc-price">--</span>
+                                    <span class="price-currency">USD</span>
+                                </div>
+                                <div class="price-update">Dernière mise à jour : <span id="btc-update">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-trading" class="section">
+                    <div class="panel">
+                        <h3>Ordres récents</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Actif</th>
+                                        <th>Type</th>
+                                        <th>Prix</th>
+                                        <th>Quantité</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-table">
+                                    <tr>
+                                        <td colspan="6" class="empty-state">Charger les données...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-market" class="section">
+                    <div class="panel">
+                        <h3>Marché</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbole</th>
+                                        <th>Nom</th>
+                                        <th>Prix</th>
+                                        <th>Variation 24h</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="market-table">
+                                    <tr>
+                                        <td colspan="4" class="empty-state">Charger les données...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="section-wallet" class="section">
+                    <div class="panel">
+                        <h3>Portefeuille</h3>
+                        <div id="wallet-data" class="json-display">Charger les données...</div>
+                    </div>
+                </section>
+
+                <section id="section-alerts" class="section">
+                    <div class="panel">
+                        <h3>Alertes</h3>
+                        <div id="alerts-data" class="json-display">Charger les données...</div>
+                    </div>
+                </section>
+
+                <section id="section-legacy" class="section">
+                    <div class="panel">
+                        <h3>Legacy Bank (SOAP)</h3>
+                        <div class="form-row">
+                            <input type="text" id="account-number" placeholder="Numéro compte" value="123456789">
+                            <input type="text" id="owner-name" placeholder="Propriétaire" value="Test User">
+                            <input type="text" id="initial-balance" placeholder="Solde initial" value="1000.00">
+                        </div>
+                        <div class="button-row">
+                            <button onclick="createBankAccount()">Créer compte</button>
+                            <button onclick="getBankAccount()">Récupérer compte</button>
+                        </div>
+                        <div id="soap-data" class="json-display">Charger les données...</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/rest.js"></script>
+    <script src="/static/js/graphql.js"></script>
+    <script src="/static/js/jsonrpc.js"></script>
+    <script src="/static/js/soap.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/sse.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

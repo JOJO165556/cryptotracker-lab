@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTracker - Connexion</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>CryptoTracker</h1>
+            <p class="auth-subtitle">Plateforme de trading crypto</p>
+
+            <div id="auth-message" class="auth-message hidden"></div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn-primary" id="login-btn">Se connecter</button>
+            </form>
+
+            <p class="auth-footer">
+                Pas encore de compte ? <a href="/register/">Créer un compte</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Connexion en cours...';
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.access) {
+                        localStorage.setItem('token', data.access);
+                        localStorage.setItem('username', username);
+                        window.location.href = '/';
+                    } else {
+                        showAuthMessage('Identifiants incorrects', 'error');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Se connecter';
+                    }
+                })
+                .catch(err => {
+                    showAuthMessage('Erreur de connexion', 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Se connecter';
+                });
+        }
+
+        function showAuthMessage(message, type) {
+            const authMessage = document.getElementById('auth-message');
+            authMessage.textContent = message;
+            authMessage.className = 'auth-message ' + type;
+            authMessage.classList.remove('hidden');
+        }
+
+        // Afficher message depuis URL (ex: ?message=register_success)
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message === 'register_success') {
+            showAuthMessage('Compte créé avec succès. Connectez-vous maintenant.', 'success');
+        }
+    </script>
+</body>
+
+</html>
