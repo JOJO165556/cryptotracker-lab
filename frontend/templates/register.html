@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTracker - Inscription</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>CryptoTracker</h1>
+            <p class="auth-subtitle">Créer votre compte</p>
+
+            <div id="auth-message" class="auth-message hidden"></div>
+
+            <form id="register-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" required autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label for="password-confirm">Confirmer le mot de passe</label>
+                    <input type="password" id="password-confirm" name="password-confirm" required
+                        autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="btn-primary" id="register-btn">Créer un compte</button>
+            </form>
+
+            <p class="auth-footer">
+                Déjà un compte ? <a href="/login/">Se connecter</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function handleRegister(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password-confirm').value;
+            const registerBtn = document.getElementById('register-btn');
+
+            if (password !== passwordConfirm) {
+                showAuthMessage('Les mots de passe ne correspondent pas', 'error');
+                return;
+            }
+
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Création en cours...';
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.access) {
+                        localStorage.setItem('token', data.access);
+                        localStorage.setItem('username', username);
+                        window.location.href = '/?message=register_success';
+                    } else {
+                        showAuthMessage('Erreur lors de la création du compte', 'error');
+                        registerBtn.disabled = false;
+                        registerBtn.textContent = 'Créer un compte';
+                    }
+                })
+                .catch(err => {
+                    showAuthMessage('Erreur de connexion', 'error');
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'Créer un compte';
+                });
+        }
+
+        function showAuthMessage(message, type) {
+            const authMessage = document.getElementById('auth-message');
+            authMessage.textContent = message;
+            authMessage.className = 'auth-message ' + type;
+            authMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

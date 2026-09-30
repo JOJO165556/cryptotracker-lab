@@ -107,6 +107,28 @@ Service SOAP simulant une banque legacy, implémentation manuelle avec XML (voir
 - `Transfer` - Effectuer un virement entre comptes
 - `CheckBalance` - Vérifier le solde d'un compte
 L'implémentation manuelle montre la structure SOAP (enveloppe, body, fault) sans dépendance externe problématique. L'application business logic est séparée dans `LegacyBankService`.
+### Phase 14 - Frontend (Terminée)
+Dashboard moderne en HTML/JS natif pour démonstration REST + GraphQL + JSON-RPC + SOAP + WebSocket + SSE ensemble (voir [ADR-011](docs/adr/ADR-011-frontend-dashboard.md)).
+**Endpoints** :
+- `GET /` - Dashboard principal
+- `GET /login/` - Page de connexion
+- `GET /register/` - Page d'inscription
+**Fonctionnalités** :
+- Interface moderne dark mode style trading
+- Navigation sidebar avec sections : Dashboard, Trading, Market, Wallet, Alerts, Legacy Bank
+- Authentification JWT via REST (token stocké en localStorage, compromis)
+- Solde + actifs détenus via REST (GET /api/wallets/)
+- Vue agrégée type tableau de bord via GraphQL (query Dashboard)
+- Analytics via JSON-RPC (POST /api/analytics/rpc)
+- Opérations bancaires via SOAP (POST /legacybank/soap/ avec XML)
+- Prix en direct d'un actif via WebSocket (ws://.../ws/market/BTC)
+- Notifications qui arrivent en live via SSE (GET /api/notifications/stream)
+- Fichiers JS séparés par protocole (rest.js, graphql.js, jsonrpc.js, soap.js, websocket.js, sse.js, app.js)
+- Token passé en query param pour SSE (EventSource ne supporte pas les headers custom)
+- Analytics via JSON-RPC
+- Opérations bancaires via SOAP
+- gRPC : information pédagogique (nécessite proxy pour navigateur)
+Frontend sans framework (React/Vue) pour rester simple. Code HTML/JS natif avec Fetch API et WebSocket API.
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)

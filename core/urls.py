@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.conf import settings
 from django.urls import path
+from django.conf.urls.static import static
 from django.views.decorators.csrf import csrf_exempt
 from ninja import NinjaAPI
 from identity.interfaces.api import router as identity_router
@@ -11,6 +13,7 @@ from analytics.interfaces.api import router as analytics_router
 from notification.interfaces.sse import notification_stream
 from payment.interfaces.views import payment_webhook
 from legacy_bank.interfaces.soap_service import soap_endpoint
+from frontend.views import dashboard, login, register
 
 from core.graphql_api.context import CryptoTrackerGraphQLView
 from core.graphql_api.schema import schema
@@ -33,6 +36,13 @@ urlpatterns = [
     # Le webhook est appelé par le prestataire de
     # paiement, pas par un client de l'API
     path("webhooks/payment", payment_webhook),
-    # Service SOAP LegacyBank (Phase 13)
+    # Service SOAP LegacyBank
     path("legacybank/soap/", csrf_exempt(soap_endpoint)),
+    # Frontend Dashboard
+    path("", dashboard),
+    path("login/", login),
+    path("register/", register),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
