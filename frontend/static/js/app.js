@@ -131,10 +131,46 @@ function logout() {
 }
 
 function loadDashboardData() {
-    loadWallet();
+    loadDashboardGraphQL();
     loadAnalytics();
     window.connectWebSocket(authToken);
     window.connectSSE(authToken);
+}
+
+function loadDashboardGraphQL() {
+    if (!authToken) return;
+
+    window.loadDashboard()
+        .then(data => {
+            if (data && data.dashboard) {
+                const dashboard = data.dashboard;
+
+                // Mise à jour KPI portefeuille
+                const kpiPortfolio = document.getElementById('kpi-portfolio');
+                if (kpiPortfolio && dashboard.balance) {
+                    kpiPortfolio.textContent = '$' + parseFloat(dashboard.balance).toLocaleString();
+                }
+
+                // Mise à jour positions wallet (GraphQL)
+                const walletPositions = document.getElementById('wallet-positions');
+                if (walletPositions && dashboard.assets) {
+                    if (dashboard.assets.length > 0) {
+                        walletPositions.innerHTML = dashboard.assets.map(asset => `
+                            <div class="position-card">
+                                <div class="position-symbol">${asset.symbol}</div>
+                                <div class="position-quantity">${parseFloat(asset.quantity).toFixed(4)}</div>
+                                <div class="position-value">$${parseFloat(asset.value || 0).toLocaleString()}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        walletPositions.innerHTML = '<div class="empty-state">Aucune position</div>';
+                    }
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Erreur GraphQL dashboard:', err);
+        });
 }
 
 function loadWallet() {
@@ -142,23 +178,33 @@ function loadWallet() {
 
     window.loadWallet()
         .then(data => {
-            const walletData = document.getElementById('wallet-data');
-            if (walletData) {
-                walletData.textContent = JSON.stringify(data, null, 2);
+            const walletPositions = document.getElementById('wallet-positions');
+            if (walletPositions) {
+                if (data && data.positions && data.positions.length > 0) {
+                    walletPositions.innerHTML = data.positions.map(pos => `
+                        <div class="position-card">
+                            <div class="position-symbol">${pos.asset_symbol}</div>
+                            <div class="position-quantity">${parseFloat(pos.quantity).toFixed(4)}</div>
+                            <div class="position-value">Position</div>
+                        </div>
+                    `).join('');
+                } else {
+                    walletPositions.innerHTML = '<div class="empty-state">Aucune position</div>';
+                }
             }
 
             if (data && data.balance) {
                 const kpiPortfolio = document.getElementById('kpi-portfolio');
                 if (kpiPortfolio) {
-                    kpiPortfolio.textContent = '$' + data.balance;
+                    kpiPortfolio.textContent = '$' + parseFloat(data.balance).toLocaleString();
                 }
             }
         })
         .catch(err => {
             console.error('Erreur wallet:', err);
-            const walletData = document.getElementById('wallet-data');
-            if (walletData) {
-                walletData.textContent = 'Erreur: ' + err.message;
+            const walletPositions = document.getElementById('wallet-positions');
+            if (walletPositions) {
+                walletPositions.innerHTML = '<div class="empty-state">Erreur de chargement</div>';
             }
         });
 }
@@ -168,27 +214,42 @@ function loadAnalytics() {
 
     window.loadAnalytics()
         .then(data => {
-            const alertsData = document.getElementById('alerts-data');
-            if (alertsData) {
-                alertsData.textContent = JSON.stringify(data, null, 2);
-            }
-
             if (data && data.result) {
-                const kpiVolume = document.getElementById('kpi-volume');
-                const kpiOrders = document.getElementById('kpi-orders');
-                const kpiAlerts = document.getElementById('kpi-alerts');
+                const result = data.result;
 
-                if (kpiVolume) kpiVolume.textContent = '$' + (data.result.volume || '--');
-                if (kpiOrders) kpiOrders.textContent = data.result.orders || '--';
-                if (kpiAlerts) kpiAlerts.textContent = data.result.alerts || '--';
+                // Volume de trading
+                const kpiVolume = document.getElementById('kpi-volume');
+                if (kpiVolume && result.volume) {
+                    kpiVolume.textContent = '$' + parseFloat(result.volume.total_volume_usd || 0).toLocaleString();
+                }
+
+                // Statistiques ordres
+                const kpiOrders = document.getElementById('kpi-orders');
+                if (kpiOrders && result.orders) {
+                    const pending = result.orders.pending_orders || 0;
+                    kpiOrders.textContent = pending.toString();
+                }
+
+                // Alertes - chargé via REST séparément
+                const kpiAlerts = document.getElementById('kpi-alerts');
+                if (kpiAlerts) {
+                    // On charge les alertes via REST
+                    fetch('/api/notifications/alerts/', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    })
+                        .then(r => r.json())
+                        .then(alertsData => {
+                            if (kpiAlerts) {
+                                const alerts = alertsData.alerts || alertsData;
+                                kpiAlerts.textContent = (alerts && alerts.length) ? alerts.length.toString() : '0';
+                            }
+                        })
+                        .catch(err => console.error('Erreur alertes KPI:', err));
+                }
             }
         })
         .catch(err => {
             console.error('Erreur analytics:', err);
-            const alertsData = document.getElementById('alerts-data');
-            if (alertsData) {
-                alertsData.textContent = 'Erreur: ' + err.message;
-            }
         });
 }
 
@@ -202,15 +263,16 @@ function loadOrders() {
         .then(data => {
             const tbody = document.getElementById('orders-table');
             if (tbody) {
-                if (data && data.length > 0) {
-                    tbody.innerHTML = data.map(order => `
+                const orders = data.results || data;
+                if (orders && orders.length > 0) {
+                    tbody.innerHTML = orders.map(order => `
                     <tr>
-                        <td>${order.id}</td>
-                        <td>${order.asset_symbol || 'BTC'}</td>
-                        <td>${order.order_type}</td>
-                        <td>$${order.price}</td>
-                        <td>${order.quantity}</td>
-                        <td>${order.status}</td>
+                        <td><span class="order-id">#${order.id.toString().slice(0, 8)}</span></td>
+                        <td><span class="asset-badge">${order.symbol || 'BTC'}</span></td>
+                        <td><span class="order-type ${order.side === 'BUY' ? 'buy' : 'sell'}">${order.side === 'BUY' ? 'Achat' : 'Vente'}</span></td>
+                        <td>$${parseFloat(order.price || 0).toLocaleString()}</td>
+                        <td>${parseFloat(order.quantity).toFixed(4)}</td>
+                        <td><span class="status-badge ${order.status === 'FILLED' ? 'filled' : 'pending'}">${order.status === 'FILLED' ? 'Exécuté' : order.status}</span></td>
                     </tr>
                 `).join('');
                 } else {
@@ -237,12 +299,13 @@ function loadMarket() {
         .then(data => {
             const tbody = document.getElementById('market-table');
             if (tbody) {
-                if (data && data.length > 0) {
-                    tbody.innerHTML = data.map(asset => `
+                const assets = data.assets || data;
+                if (assets && assets.length > 0) {
+                    tbody.innerHTML = assets.map(asset => `
                     <tr>
-                        <td>${asset.symbol}</td>
+                        <td><span class="asset-badge">${asset.symbol}</span></td>
                         <td>${asset.name}</td>
-                        <td>$${asset.current_price}</td>
+                        <td><span class="price">$${parseFloat(asset.current_price || 0).toLocaleString()}</span></td>
                         <td class="positive">+2.5%</td>
                     </tr>
                 `).join('');
@@ -268,16 +331,27 @@ function loadAlerts() {
     })
         .then(r => r.json())
         .then(data => {
-            const alertsData = document.getElementById('alerts-data');
-            if (alertsData) {
-                alertsData.textContent = JSON.stringify(data, null, 2);
+            const alertsList = document.getElementById('alerts-list');
+            if (alertsList) {
+                const alerts = data.alerts || data;
+                if (alerts && alerts.length > 0) {
+                    alertsList.innerHTML = alerts.map(alert => `
+                        <div class="alert-card">
+                            <div class="alert-symbol">${alert.asset_symbol}</div>
+                            <div class="alert-target">Cible: $${parseFloat(alert.target_price).toLocaleString()}</div>
+                            <div class="alert-direction ${alert.direction === 'ABOVE' ? 'positive' : 'negative'}">${alert.direction === 'ABOVE' ? 'Au-dessus' : 'En dessous'}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    alertsList.innerHTML = '<div class="empty-state">Aucune alerte</div>';
+                }
             }
         })
         .catch(err => {
             console.error('Erreur alertes:', err);
-            const alertsData = document.getElementById('alerts-data');
-            if (alertsData) {
-                alertsData.textContent = 'Erreur: ' + err.message;
+            const alertsList = document.getElementById('alerts-list');
+            if (alertsList) {
+                alertsList.innerHTML = '<div class="empty-state">Erreur de chargement</div>';
             }
         });
 }
@@ -287,13 +361,17 @@ function createBankAccount() {
         .then(data => {
             const soapData = document.getElementById('soap-data');
             if (soapData) {
-                soapData.textContent = data;
+                if (data && data.includes('Account created')) {
+                    soapData.innerHTML = '<div class="success-message">Compte bancaire créé avec succès</div>';
+                } else {
+                    soapData.textContent = data;
+                }
             }
         })
         .catch(err => {
             const soapData = document.getElementById('soap-data');
             if (soapData) {
-                soapData.textContent = 'Erreur: ' + err.message;
+                soapData.innerHTML = '<div class="error-message">Erreur: ' + err.message + '</div>';
             }
         });
 }
@@ -309,7 +387,7 @@ function getBankAccount() {
         .catch(err => {
             const soapData = document.getElementById('soap-data');
             if (soapData) {
-                soapData.textContent = 'Erreur: ' + err.message;
+                soapData.innerHTML = '<div class="error-message">Erreur: ' + err.message + '</div>';
             }
         });
 }
