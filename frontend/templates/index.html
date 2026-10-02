@@ -16,7 +16,8 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-section="dashboard">
+                <a href="#" class="nav-item active" data-section="dashboard"
+                    onclick="showSection('dashboard'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <rect x="3" y="3" width="4" height="4" rx="1" />
@@ -26,14 +27,14 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item" data-section="trading">
+                <a href="#" class="nav-item" data-section="trading" onclick="showSection('trading'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M3 7l6-3 6 3M3 7v9l6 3 6-3V7M3 7l6 3M9 10v9M15 7l-6 3" />
                     </svg>
                     <span>Trading</span>
                 </a>
-                <a href="#" class="nav-item" data-section="market">
+                <a href="#" class="nav-item" data-section="market" onclick="showSection('market'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M3 17V13a2 2 0 012-2h10a2 2 0 012 2v4" />
@@ -42,7 +43,7 @@
                     </svg>
                     <span>Marché</span>
                 </a>
-                <a href="#" class="nav-item" data-section="wallet">
+                <a href="#" class="nav-item" data-section="wallet" onclick="showSection('wallet'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <rect x="2" y="5" width="16" height="10" rx="2" />
@@ -50,7 +51,7 @@
                     </svg>
                     <span>Portefeuille</span>
                 </a>
-                <a href="#" class="nav-item" data-section="alerts">
+                <a href="#" class="nav-item" data-section="alerts" onclick="showSection('alerts'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -58,7 +59,7 @@
                     </svg>
                     <span>Alertes</span>
                 </a>
-                <a href="#" class="nav-item" data-section="legacy">
+                <a href="#" class="nav-item" data-section="legacy" onclick="showSection('legacy'); return false;">
                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <rect x="4" y="4" width="12" height="12" rx="2" />
@@ -188,14 +189,18 @@
                 <section id="section-wallet" class="section">
                     <div class="panel">
                         <h3>Portefeuille</h3>
-                        <div id="wallet-data" class="json-display">Charger les données...</div>
+                        <div id="wallet-positions" class="positions-grid">
+                            <div class="empty-state">Charger les données...</div>
+                        </div>
                     </div>
                 </section>
 
                 <section id="section-alerts" class="section">
                     <div class="panel">
                         <h3>Alertes</h3>
-                        <div id="alerts-data" class="json-display">Charger les données...</div>
+                        <div id="alerts-list" class="alerts-list">
+                            <div class="empty-state">Charger les données...</div>
+                        </div>
                     </div>
                 </section>
 
@@ -211,7 +216,7 @@
                             <button onclick="createBankAccount()">Créer compte</button>
                             <button onclick="getBankAccount()">Récupérer compte</button>
                         </div>
-                        <div id="soap-data" class="json-display">Charger les données...</div>
+                        <div id="soap-data" class="soap-response">Charger les données...</div>
                     </div>
                 </section>
             </div>
