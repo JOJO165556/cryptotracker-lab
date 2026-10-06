@@ -41,3 +41,7 @@ pytest-cov==5.0.0
 # HTTP client for benchmarks
 requests==2.34.2
 websockets==14.1
+
+# Resilience patterns
+tenacity==9.0.0
+pybreaker==1.4.1
