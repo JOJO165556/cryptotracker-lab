@@ -154,6 +154,24 @@ Benchmarks comparatifs entre protocoles (voir [ADR-013](docs/adr/ADR-013-perform
 - REST vs gRPC : gRPC 11.7x plus rapide (338 req/s vs 28 req/s, 295ms vs 3470ms latence)
 - WebSocket : 2.74ms latence moyenne (min 0.66ms, max 17.39ms)
 - GraphQL DataLoader : 42.74ms latence (anti-N+1 activé)
+### Phase 17 - Résilience (Terminée)
+Mécanismes de résilience pour gérer les pannes de dépendances externes (voir [ADR-014](docs/adr/ADR-014-resilience.md)).
+**Bibliothèques** :
+- `tenacity` - Retry avec backoff exponentiel
+- `pybreaker` - Circuit breaker pattern
+**Implémentation** :
+- `core/resilience/` - Module de résilience (retry, circuit breaker)
+- `market/infrastructure/publishers.py` - Retry Redis + timeout
+- `market/interfaces/consumers/price_consumer.py` - Retry WebSocket + circuit breaker
+- `core/celery.py` - Configuration retry par défaut pour tâches
+**Configuration** :
+- Redis: 3 retries, backoff 0.1s→2s, circuit breaker après 5 échecs
+- WebSocket: 5 retries, backoff 0.5s→10s, circuit breaker après 5 échecs
+- Celery: 3 retries, 60s entre retries, timeout 30s
+- DB: 2 retries, backoff 0.5s→1s, circuit breaker après 10 échecs
+**Tests** :
+- `scripts/test_resilience.py` - Script de test manuel
+- `core/resilience/tests/` - Tests unitaires retry et circuit breaker
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
@@ -189,6 +207,9 @@ pytest --no-cov
 # Rapport coverage HTML
 pytest --cov-report=html
 open htmlcov/index.html
+
+# Tests de résilience
+pytest core/resilience/tests/
 ```
 ## Performance
 ```bash
@@ -200,6 +221,19 @@ python scripts/benchmark_websocket.py
 
 # Benchmark GraphQL DataLoader
 python scripts/benchmark_graphql_dataloader.py
+```
+## Résilience
+```bash
+# Test manuel de résilience
+python scripts/test_resilience.py --scenario all
+
+# Scénarios manuels
+# 1. Arrêter Redis: docker-compose stop redis
+#    → Vérifier que le WebSocket retry et envoie message d'erreur
+# 2. Arrêter PostgreSQL: docker-compose stop postgresql
+#    → Vérifier que les endpoints REST retry et échouent gracieusement
+# 3. Redémarrer les services
+#    → Vérifier que le circuit breaker se ferme automatiquement
 ```
 ## Documentation
 - [docs/00_vision_roadmap.md](docs/00_vision_roadmap.md) - Vision et feuille de route

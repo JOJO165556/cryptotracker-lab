@@ -1,9 +1,13 @@
 import asyncio
 import json
+import logging
+from typing import Optional
 
 import redis.asyncio as aioredis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class PriceConsumer(AsyncWebsocketConsumer):
@@ -14,7 +18,17 @@ class PriceConsumer(AsyncWebsocketConsumer):
     Chaque connexion WebSocket gère sa propre liste de symboles souscrits
     La lecture Redis tourne dans une tâche asyncio indépendante pour ne pas
     bloquer la boucle de messages WebSocket
+
+    Implémente la résilience:
+    - Retry avec backoff exponentiel
+    - Circuit breaker après échecs consécutifs
+    - Timeout de connexion
     """
+
+    MAX_RETRIES = 5
+    INITIAL_RETRY_DELAY = 0.5
+    MAX_RETRY_DELAY = 10.0
+    CONNECTION_TIMEOUT = 3.0
 
     async def connect(self):
         """
@@ -23,8 +37,10 @@ class PriceConsumer(AsyncWebsocketConsumer):
         Le symbole est extrait et normalisé en majuscules
         """
         symbol = self.scope["url_route"]["kwargs"]["symbol"].upper()
-        self.subscribed_symbols: set[str] = {symbol}
-        self._redis_task: asyncio.Task | None = None
+        self.subscribed_symbols = {symbol}
+        self._redis_task = None  # type: Optional[asyncio.Task]
+        self._retry_count = 0
+        self._circuit_open = False
 
         await self.accept()
         await self._start_redis_listener()
@@ -66,6 +82,9 @@ class PriceConsumer(AsyncWebsocketConsumer):
             added = new_symbols - self.subscribed_symbols
             if added:
                 self.subscribed_symbols.update(added)
+                # Reset circuit breaker sur changement de souscription
+                self._retry_count = 0
+                self._circuit_open = False
                 # Redémarre le listener avec les nouveaux canaux
                 if self._redis_task is not None:
                     self._redis_task.cancel()
@@ -88,7 +107,10 @@ class PriceConsumer(AsyncWebsocketConsumer):
         et pousse chaque message reçu vers le client WebSocket
 
         La tâche tourne jusqu'à l'annulation (disconnect ou re-subscribe)
-        En cas d'erreur Redis, elle attend 1 seconde et retente (résilience basique)
+        Implémente:
+        - Retry avec backoff exponentiel
+        - Circuit breaker après MAX_RETRIES échecs
+        - Timeout de connexion
         """
         redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379/0")
 
@@ -96,11 +118,26 @@ class PriceConsumer(AsyncWebsocketConsumer):
             client = None
             pubsub = None
             try:
-                client = aioredis.from_url(redis_url, decode_responses=True)
+                # Circuit breaker: si ouvert, attendre avant retry
+                if self._circuit_open:
+                    delay = min(self.INITIAL_RETRY_DELAY * (2 ** self._retry_count), self.MAX_RETRY_DELAY)
+                    logger.warning(f"Redis circuit ouvert, attente {delay}s avant retry")
+                    await asyncio.sleep(delay)
+                    self._circuit_open = False
+                    self._retry_count = 0
+
+                # Timeout de connexion
+                client = await asyncio.wait_for(
+                    aioredis.from_url(redis_url, decode_responses=True),
+                    timeout=self.CONNECTION_TIMEOUT
+                )
                 pubsub = client.pubsub()
 
                 channels = [f"market:price:{sym}" for sym in self.subscribed_symbols]
                 await pubsub.subscribe(*channels)
+
+                # Reset retry count sur connexion réussie
+                self._retry_count = 0
 
                 while True:
                     message = await pubsub.get_message(timeout=1.0)
@@ -113,19 +150,43 @@ class PriceConsumer(AsyncWebsocketConsumer):
             except asyncio.CancelledError:
                 raise  # propagé pour arrêter la tâche proprement
 
-            except Exception:
-                # Erreur Redis transitoire (connexion perdue, restart) → retry
-                await asyncio.sleep(1)
+            except asyncio.TimeoutError:
+                logger.error("Timeout de connexion Redis")
+                self._retry_count += 1
 
-            finally:
-                if pubsub is not None:
-                    try:
-                        await pubsub.unsubscribe()
-                        await pubsub.aclose()
-                    except Exception:
-                        pass
-                if client is not None:
-                    try:
-                        await client.aclose()
-                    except Exception:
-                        pass
+            except Exception as e:
+                logger.error(f"Erreur Redis: {e}")
+                self._retry_count += 1
+
+            # Circuit breaker: ouvrir après trop d'échecs
+            if self._retry_count >= self.MAX_RETRIES:
+                self._circuit_open = True
+                logger.error(f"Redis circuit breaker ouvert après {self.MAX_RETRIES} échecs")
+                # Envoyer message d'erreur au client
+                try:
+                    await self.send(json.dumps({
+                        "error": "connection_lost",
+                        "message": "Connexion Redis perdue, tentative de reconnexion..."
+                    }))
+                except Exception:
+                    pass
+
+            # Backoff exponentiel
+            delay = min(
+                self.INITIAL_RETRY_DELAY * (2 ** min(self._retry_count, 10)),
+                self.MAX_RETRY_DELAY
+            )
+            await asyncio.sleep(delay)
+            
+            # Cleanup
+            if pubsub is not None:
+                try:
+                    await pubsub.unsubscribe()
+                    await pubsub.aclose()
+                except Exception:
+                    pass
+            if client is not None:
+                try:
+                    await client.aclose()
+                except Exception:
+                    pass
