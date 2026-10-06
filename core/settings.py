@@ -3,6 +3,11 @@ import environ
 from datetime import timedelta
 from pathlib import Path
 
+# Config structlog pour logs structurés
+import structlog
+import logging
+from pythonjsonlogger import jsonlogger
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, True))
@@ -31,6 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "channels",
+    "django_prometheus",  # Metrics
     "analytics",
     "frontend",
     "identity",
@@ -45,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",  # CORS doit être avant SecurityMiddleware
+    "request_id.middleware.RequestIdMiddleware",  # Request ID pour observabilité
     "core.middleware.RateLimitMiddleware",  # Rate limiting
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -182,9 +189,7 @@ CELERY_TASK_EAGER_PROPAGATES = env.bool("CELERY_TASK_EAGER_PROPAGATES", default=
 # Secret partagé avec le prestataire de paiement simulé, pour signer les webhooks
 PAYMENT_WEBHOOK_SECRET = env("PAYMENT_WEBHOOK_SECRET", default="dev-webhook-secret")
 
-# CORS Configuration (django-cors-headers)
-# En développement, autoriser localhost pour faciliter les tests
-# En production, restreindre aux domaines autorisés
+# CORS Configuration
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:8000", "http://127.0.0.1:8000"]
@@ -193,11 +198,11 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_HEADERS = ["Authorization", "Content-Type", "Idempotency-Key"]
 
-# Rate Limiting (django-ratelimit)
+# Rate Limiting
 RATELIMIT_ENABLE = env.bool("RATELIMIT_ENABLE", default=True)
 RATELIMIT_USE_CACHE = "default"  # Utilise le cache Django par défaut
 
-# Validation des mots de passe (django-password-validators)
+# Validation des mots de passe
 AUTH_PASSWORD_VALIDATORS = [
     "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -219,3 +224,41 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)  # False en dev
 SECURE_PROXY_SSL_HEADER = env("SECURE_PROXY_SSL_HEADER", default=None)
+
+# Observabilité - Logs structurés avec structlog
+if DEBUG:
+    # Mode dev: logs lisibles en console
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.dev.ConsoleRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+else:
+    # Mode production: logs JSON
+    structlog.configure(
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.JSONRenderer(),
+        ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
+
+# Observabilité - Metrics avec django-prometheus
+PROMETHEUS_EXPORT_MIGRATIONS = False  # Ne pas exporter les métriques de migrations
+PROMETHEUS_EXPORT_MIGRATIONS_BY_LABEL = False

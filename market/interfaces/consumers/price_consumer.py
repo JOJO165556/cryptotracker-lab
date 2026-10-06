@@ -1,13 +1,13 @@
 import asyncio
 import json
-import logging
 from typing import Optional
 
 import redis.asyncio as aioredis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class PriceConsumer(AsyncWebsocketConsumer):
@@ -121,7 +121,7 @@ class PriceConsumer(AsyncWebsocketConsumer):
                 # Circuit breaker: si ouvert, attendre avant retry
                 if self._circuit_open:
                     delay = min(self.INITIAL_RETRY_DELAY * (2 ** self._retry_count), self.MAX_RETRY_DELAY)
-                    logger.warning(f"Redis circuit ouvert, attente {delay}s avant retry")
+                    logger.warning("redis_circuit_open", delay=delay, retry_count=self._retry_count)
                     await asyncio.sleep(delay)
                     self._circuit_open = False
                     self._retry_count = 0
@@ -151,17 +151,17 @@ class PriceConsumer(AsyncWebsocketConsumer):
                 raise  # propagé pour arrêter la tâche proprement
 
             except asyncio.TimeoutError:
-                logger.error("Timeout de connexion Redis")
+                logger.error("redis_timeout")
                 self._retry_count += 1
 
             except Exception as e:
-                logger.error(f"Erreur Redis: {e}")
+                logger.error("redis_error", error=str(e))
                 self._retry_count += 1
 
             # Circuit breaker: ouvrir après trop d'échecs
             if self._retry_count >= self.MAX_RETRIES:
                 self._circuit_open = True
-                logger.error(f"Redis circuit breaker ouvert après {self.MAX_RETRIES} échecs")
+                logger.error("redis_circuit_breaker_open", max_retries=self.MAX_RETRIES)
                 # Envoyer message d'erreur au client
                 try:
                     await self.send(json.dumps({

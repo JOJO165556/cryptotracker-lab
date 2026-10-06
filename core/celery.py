@@ -1,11 +1,11 @@
 import os
-import logging
+import structlog
 
 from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 app = Celery("cryptotracker")
 

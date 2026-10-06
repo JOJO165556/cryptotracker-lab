@@ -1,4 +1,4 @@
-import logging
+import structlog
 
 from celery import shared_task
 
@@ -8,7 +8,7 @@ from payment.infrastructure.repositories import PaymentRepository
 from wallet.application.use_cases import CreditWalletUseCase
 from wallet.infrastructure.repositories import TransactionRepository, WalletRepository
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @shared_task(name="payment.process")
@@ -26,5 +26,5 @@ def process_payment(payment_id: str, decision: str) -> str:
         ),
     )
     payment = use_case.execute(payment_id=payment_id, decision=PaymentStatus(decision))
-    logger.info("Paiement %s regle en %s", payment.provider_ref, payment.status.value)
+    logger.info("payment_settled", provider_ref=payment.provider_ref, status=payment.status.value)
     return str(payment.id)
