@@ -172,6 +172,23 @@ Mécanismes de résilience pour gérer les pannes de dépendances externes (voir
 **Tests** :
 - `scripts/test_resilience.py` - Script de test manuel
 - `core/resilience/tests/` - Tests unitaires retry et circuit breaker
+### Phase 18 - Sécurité (Terminée)
+Contrôles de sécurité multicouche pour protéger contre les attaques courantes (voir [ADR-015](docs/adr/ADR-015-security.md)).
+**Bibliothèques** :
+- `django-ratelimit==4.1.0` - Rate limiting flexible
+- `django-cors-headers==4.3.1` - Configuration CORS
+- `django-password-validators==1.5.0` - Validation mot de passe
+**Implémentation** :
+- `core/middleware.py` - Rate limiting middleware (100 req/min par IP, bypass pour authentifiés)
+- `core/settings.py` - CORS, validation mot de passe, security headers
+- `core/security/tests/test_ratelimit.py` - Tests unitaires rate limiting
+**Configuration** :
+- Rate limiting: 100 req/min par IP, 1000 req/min par utilisateur authentifié
+- CORS: localhost autorisé pour développement
+- Validation mot de passe: 8+ caractères, complexité (majuscule, minuscule, chiffre, spécial)
+- Security headers: HSTS, CSP, X-Content-Type-Options, X-Frame-Options
+**Tests** :
+- `core/security/tests/test_ratelimit.py` - 6 tests (1 skip pour limitation cache test)
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
@@ -256,3 +273,5 @@ python scripts/test_resilience.py --scenario all
 - ADR-011 - Frontend Dashboard
 - ADR-012 - Stratégie de tests
 - ADR-013 - Tests de performance
+- ADR-014 - Résilience (retry et circuit breaker)
+- ADR-015 - Stratégie de sécurité
