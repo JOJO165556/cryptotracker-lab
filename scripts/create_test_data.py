@@ -5,11 +5,13 @@ A exécuter avec: python manage.py shell
 
 from decimal import Decimal
 from uuid import uuid4
-from market.infrastructure.models import AssetModel
-from wallet.infrastructure.models import WalletModel, TransactionModel
-from trading.infrastructure.models import OrderModel
-from notification.infrastructure.models import NotificationModel, PriceAlertModel
-from identity.infrastructure.models import UserModel
+from django.contrib.auth import get_user_model
+from market.models import AssetModel
+from wallet.models import WalletModel, TransactionModel
+from trading.models import OrderModel
+from notification.models import NotificationModel, PriceAlertModel
+
+UserModel = get_user_model()
 
 
 def create_test_data():
@@ -44,13 +46,13 @@ def create_test_data():
             symbol=asset_data['symbol'],
             defaults={
                 'name': asset_data['name'],
-                'price': Decimal(asset_data['price'])
+                'current_price': Decimal(asset_data['price'])
             }
         )
         if created:
             print(f"Actif créé: {asset.symbol}")
         else:
-            asset.price = Decimal(asset_data['price'])
+            asset.current_price = Decimal(asset_data['price'])
             asset.save()
 
     # Créer un wallet pour l'utilisateur
@@ -71,7 +73,7 @@ def create_test_data():
             id=uuid4(),
             defaults={
                 'wallet': wallet,
-                'symbol': 'BTC/USD',
+                'symbol': 'BTC',
                 'side': 'BUY' if i % 2 == 0 else 'SELL',
                 'type': 'MARKET',
                 'quantity': Decimal('0.1'),
@@ -87,10 +89,9 @@ def create_test_data():
             id=uuid4(),
             defaults={
                 'user': user,
-                'symbol': 'BTC',
+                'asset_symbol': 'BTC',
                 'target_price': Decimal('45000.00'),
-                'condition': 'ABOVE',
-                'is_active': True
+                'direction': 'ABOVE'
             }
         )
     print(f"Alertes créées: {PriceAlertModel.objects.filter(user=user).count()}")
@@ -101,9 +102,9 @@ def create_test_data():
             id=uuid4(),
             defaults={
                 'user': user,
-                'title': f'Notification {i+1}',
-                'message': f'Test notification message {i+1}',
-                'is_read': i < 2
+                'type': 'ALERT',
+                'payload': {'message': f'Test notification {i+1}'},
+                'status': 'READ' if i < 2 else 'UNREAD'
             }
         )
     print(f"Notifications créées: {NotificationModel.objects.filter(user=user).count()}")

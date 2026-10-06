@@ -1,8 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 def dashboard(request):
     """Vue pour servir le dashboard frontend"""
+    if not request.user.is_authenticated:
+        return redirect('/login/')
     return render(request, 'index.html')
 
 

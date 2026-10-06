@@ -37,7 +37,7 @@ for i in range(5):
         id=uuid4(),
         defaults={
             'wallet': wallet,
-            'symbol': 'BTC/USD',
+            'symbol': 'BTC',
             'side': 'BUY' if i % 2 == 0 else 'SELL',
             'type': 'MARKET',
             'quantity': Decimal('0.1'),

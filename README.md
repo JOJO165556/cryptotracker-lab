@@ -129,6 +129,31 @@ Dashboard moderne en HTML/JS natif pour démonstration REST + GraphQL + JSON-RPC
 - Opérations bancaires via SOAP
 - gRPC : information pédagogique (nécessite proxy pour navigateur)
 Frontend sans framework (React/Vue) pour rester simple. Code HTML/JS natif avec Fetch API et WebSocket API.
+### Phase 15 - Tests (Terminée)
+Tests unitaires et intégration avec pytest et pytest-cov (voir [ADR-012](docs/adr/ADR-012-test-strategy.md)).
+**Configuration** :
+- pytest avec coverage HTML et terminal
+- 241 tests passent en ~2 minutes
+- Coverage 88%
+**Tests par protocole** :
+- REST : 33 tests (identity, wallet, trading, notification, payment)
+- GraphQL : 9 tests (schema + câblage URL)
+- JSON-RPC : 8 tests (analytics)
+- SOAP : 11 tests (service + endpoint)
+- SSE : 14 tests (flux async + repository)
+- Webhooks : 18 tests (signature + Celery)
+- WebSocket : 8 tests (consumer + 4 intégration skip)
+- gRPC : 9 tests (handler + 5 intégration skip)
+### Phase 16 - Performance (Terminée)
+Benchmarks comparatifs entre protocoles (voir [ADR-013](docs/adr/ADR-013-performance.md)).
+**Scripts** :
+- `scripts/benchmark_rest_vs_grpc.py` - Latence et throughput REST vs gRPC
+- `scripts/benchmark_websocket.py` - Latence broadcast Redis
+- `scripts/benchmark_graphql_dataloader.py` - Validation DataLoader anti-N+1
+**Résultats** :
+- REST vs gRPC : gRPC 11.7x plus rapide (338 req/s vs 28 req/s, 295ms vs 3470ms latence)
+- WebSocket : 2.74ms latence moyenne (min 0.66ms, max 17.39ms)
+- GraphQL DataLoader : 42.74ms latence (anti-N+1 activé)
 ## Durcissement sécurité
 Passé sur l'ensemble des interfaces déjà livrées :
 - **Anti-IDOR** : notification, trading et analytics refusent toute ressource appartenant à un autre utilisateur (404 sans fuite d'existence)
@@ -158,12 +183,23 @@ celery -A core worker
 # Tous les tests avec coverage
 pytest
 
-# Tests sans coverage (plus rapide)
+# Tests sans coverage
 pytest --no-cov
 
 # Rapport coverage HTML
 pytest --cov-report=html
 open htmlcov/index.html
+```
+## Performance
+```bash
+# Benchmark REST vs gRPC
+python scripts/benchmark_rest_vs_grpc.py
+
+# Benchmark WebSocket latence
+python scripts/benchmark_websocket.py
+
+# Benchmark GraphQL DataLoader
+python scripts/benchmark_graphql_dataloader.py
 ```
 ## Documentation
 - [docs/00_vision_roadmap.md](docs/00_vision_roadmap.md) - Vision et feuille de route
@@ -185,3 +221,4 @@ open htmlcov/index.html
 - ADR-010 - SOAP LegacyBank simulé
 - ADR-011 - Frontend Dashboard
 - ADR-012 - Stratégie de tests
+- ADR-013 - Tests de performance
