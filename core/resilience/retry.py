@@ -11,8 +11,9 @@ from tenacity import (
     before_sleep_log,
 )
 import logging
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def retry_with_backoff(

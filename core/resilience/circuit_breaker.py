@@ -5,12 +5,12 @@ empêchant les appels futurs et renvoyant immédiatement une erreur ou un fallba
 Après un délai, le circuit passe en half-open pour tester si le service est rétabli.
 """
 
-import logging
+import structlog
 from typing import Callable
 from functools import wraps
 from pybreaker import CircuitBreaker, CircuitBreakerError
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RedisCircuitBreaker:

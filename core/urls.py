@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.views.decorators.csrf import csrf_exempt
 from ninja import NinjaAPI
@@ -30,6 +30,7 @@ api.add_router("/analytics/", analytics_router)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("metrics/", include("django_prometheus.urls")),  # Metrics pour observabilité
     path("graphql/", csrf_exempt(CryptoTrackerGraphQLView.as_view(schema=schema))),
     path("api/", api.urls),
     path("api/notifications/stream", notification_stream),

@@ -1,4 +1,4 @@
-import logging
+import structlog
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -12,7 +12,7 @@ from payment.domain.exceptions import InvalidSignatureError, StaleWebhookError
 from payment.infrastructure.repositories import PaymentRepository
 from payment.interfaces.schemas import PaymentWebhookIn
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 @csrf_exempt
@@ -35,10 +35,10 @@ def payment_webhook(request):
     except StaleWebhookError:
         # 4xx et non 5xx : un rejeu est définitif, le faire réessayer
         # martèlerait le prestataire sans fin
-        logger.warning("Webhook de paiement rejete : timestamp hors tolerance")
+        logger.warning("webhook_stale")
         return JsonResponse({"detail": "Webhook expire"}, status=400)
     except InvalidSignatureError:
-        logger.warning("Webhook de paiement rejete : signature invalide")
+        logger.warning("webhook_invalid_signature")
         return JsonResponse({"detail": "Signature invalide"}, status=401)
 
     try:
@@ -58,7 +58,7 @@ def payment_webhook(request):
 
         process_payment.delay(str(payment.id), payload.status.value)
 
-    logger.info("Webhook %s enregistre (nouveau=%s)", payload.provider_ref, created)
+    logger.info("webhook_recorded", provider_ref=payload.provider_ref, created=created)
 
     return JsonResponse(
         {"received": True, "payment_id": str(payment.id), "duplicate": not created},

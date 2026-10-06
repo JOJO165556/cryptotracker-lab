@@ -1,11 +1,11 @@
 import json
-import logging
 from django.conf import settings
 import redis
+import structlog
 
 from core.resilience import redis_retry
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RedisMarketPublisher:
