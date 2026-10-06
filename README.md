@@ -155,7 +155,15 @@ celery -A core worker
 ```
 ## Tests
 ```bash
+# Tous les tests avec coverage
 pytest
+
+# Tests sans coverage (plus rapide)
+pytest --no-cov
+
+# Rapport coverage HTML
+pytest --cov-report=html
+open htmlcov/index.html
 ```
 ## Documentation
 - [docs/00_vision_roadmap.md](docs/00_vision_roadmap.md) - Vision et feuille de route
@@ -174,3 +182,6 @@ pytest
 - ADR-007 - JSON-RPC pour le service Analytics
 - ADR-008 - Server-Sent Events pour les notifications
 - ADR-009 - Webhook de paiement entrant traité en Celery (`docs/adr/ADR-009-webhooks-inbound-async.md`)
+- ADR-010 - SOAP LegacyBank simulé
+- ADR-011 - Frontend Dashboard
+- ADR-012 - Stratégie de tests

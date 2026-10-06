@@ -36,3 +36,4 @@ defusedxml==0.7.1
 pytest==8.4.2
 pytest-asyncio==0.24.0
 pytest-django==4.14.0
+pytest-cov==5.0.0
