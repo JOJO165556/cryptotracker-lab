@@ -1,3 +1,11 @@
-from .server import OrderEngine
+import os
+import django
 
-__all__ = ["OrderEngine"]
+# Initialiser Django uniquement si les settings sont configurés
+if os.environ.get('DJANGO_SETTINGS_MODULE'):
+    if not django.conf.settings.configured:
+        django.setup()
+    from .server import OrderEngine
+    __all__ = ["OrderEngine"]
+else:
+    __all__ = []

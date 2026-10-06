@@ -103,9 +103,9 @@ class PriceConsumer(AsyncWebsocketConsumer):
                 await pubsub.subscribe(*channels)
 
                 while True:
-                    message = await pubsub.get_message(ignore_subscribe_messages=True)
+                    message = await pubsub.get_message(timeout=1.0)
                     if message is None:
-                        break
+                        continue
                     if message["type"] == "message":
                         # Transmet le payload brut tel que publié par RedisMarketPublisher
                         await self.send(text_data=message["data"])

@@ -1,5 +1,6 @@
 import os
 import threading
+from concurrent.futures import ThreadPoolExecutor
 
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
@@ -20,7 +21,8 @@ def start_grpc_server():
     from order_engine.server import OrderEngine
     from order_engine.proto.order_pb2_grpc import add_OrderServiceServicer_to_server
 
-    server = grpc.server(thread_pool=None)
+    thread_pool = ThreadPoolExecutor(max_workers=10)
+    server = grpc.server(thread_pool=thread_pool)
     order_engine = OrderEngine()
     add_OrderServiceServicer_to_server(order_engine, server)
     server.add_insecure_port("[::]:50051")

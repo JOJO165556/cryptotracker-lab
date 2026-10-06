@@ -24,7 +24,7 @@ from payment.domain import signing
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
-DEFAULT_BASE_URL = "http://localhost:8005"
+DEFAULT_BASE_URL = "http://localhost:8000"
 WEBHOOK_PATH = "/webhooks/payment"
 
 # Scénarios : ce que le prestataire peut faire, du plus banal au plus vicieux
