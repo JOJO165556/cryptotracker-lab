@@ -122,7 +122,7 @@ python scripts/test_resilience.py --scenario all
 
 - **Logs structurés**: format console en dev, JSON en production avec structlog
 - **Request ID**: injecté automatiquement pour suivre une requête de bout en bout
-- **Metrics**: endpoint `/metrics` avec métriques Django (DB, cache, requêtes)
+- **Metrics**: endpoint `/metrics` avec métriques HTTP (requêtes, durée, statuts)
 
 **Note**: La documentation est continue (ADR + README) à chaque phase, donc la phase 20 est implicitement terminée.
 

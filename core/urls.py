@@ -17,6 +17,7 @@ from frontend.views import dashboard, login, register
 
 from core.graphql_api.context import CryptoTrackerGraphQLView
 from core.graphql_api.schema import schema
+from core.observability.metrics import metrics_view
 
 api = NinjaAPI(title="CryptoTracker Lab API", version="1.0.0")
 
@@ -28,9 +29,10 @@ api.add_router("/market/", market_router)
 api.add_router("/notifications/", notification_router)
 api.add_router("/analytics/", analytics_router)
 
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("metrics/", include("django_prometheus.urls")),  # Metrics pour observabilité
+    path("metrics", metrics_view),  # Metrics pour observabilité (compatible ASGI)
     path("graphql/", csrf_exempt(CryptoTrackerGraphQLView.as_view(schema=schema))),
     path("api/", api.urls),
     path("api/notifications/stream", notification_stream),

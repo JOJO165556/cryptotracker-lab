@@ -19,7 +19,7 @@ Sans observabilité, il est difficile de:
 
 ## Alternatives
 
-### Option 1: Logs Django standard (non structurés)
+### Option 1: Logs Django standard
 - **Avantages**: Configuration simple, pas de dépendances externes
 - **Inconvénients**: Logs non structurés, pas de request ID, pas de métriques
 - **Rejeté**: Insuffisant pour suivre une requête de bout en bout
@@ -44,12 +44,14 @@ Sans observabilité, il est difficile de:
 Implémenter une stratégie d'observabilité pragmatique avec:
 1. **Logs structurés** avec `structlog`
 2. **Request ID** avec middleware Django
-3. **Metrics de base** avec `django-prometheus`
+3. **Metrics de base** avec `prometheus-client` (compatible ASGI)
+
+**Note**: `django-prometheus` n'est pas compatible ASGI (Daphne). Pour ce projet qui utilise ASGI pour WebSockets, nous utilisons `prometheus-client` directement qui fonctionne avec ASGI/WSGI.
 
 ### Bibliothèques ajoutées
 - `structlog` - Logs structurés JSON
 - `django-request-id` - Request ID middleware
-- `django-prometheus` - Metrics de base (optionnel)
+- `prometheus-client` - Metrics de base (compatible ASGI)
 
 ## Conséquences
 

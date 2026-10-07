@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "channels",
-    "django_prometheus",  # Metrics
     "analytics",
     "frontend",
     "identity",
@@ -52,6 +51,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",  # CORS doit être avant SecurityMiddleware
     "request_id.middleware.RequestIdMiddleware",  # Request ID pour observabilité
+    "core.observability.middleware.PrometheusMetricsMiddleware",  # Metrics Prometheus
     "core.middleware.RateLimitMiddleware",  # Rate limiting
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -258,7 +258,3 @@ else:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
-
-# Observabilité - Metrics avec django-prometheus
-PROMETHEUS_EXPORT_MIGRATIONS = False  # Ne pas exporter les métriques de migrations
-PROMETHEUS_EXPORT_MIGRATIONS_BY_LABEL = False

@@ -54,5 +54,5 @@ django-password-validators==1.5.0
 # Observability
 structlog==24.4.0
 django-request-id==1.0.0
-django-prometheus==2.3.1
+prometheus-client==0.21.0
 python-json-logger==2.0.7
